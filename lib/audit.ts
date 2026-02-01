@@ -1,74 +1,75 @@
-// lib/audit.ts
-//
-// This module supports two import styles used across the codebase:
-// 1) import { logAudit } from "@/lib/audit"
-// 2) import { audit } from "@/lib/audit"
-//
-// Both are provided below for compatibility.
-
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export type AuditAction =
+  | "LOGIN"
+  | "LOGOUT"
   | "CREATE"
   | "UPDATE"
   | "DELETE"
-  | "APPROVE"
-  | "REJECT"
-  | "LOGIN"
-  | "LOGOUT"
+  | "UPSERT"
+  | "EXPORT"
+  | "IMPORT"
   | "OTHER";
 
 export type AuditEntity =
-  | "USER"
-  | "CLIENT"
-  | "PROJECT"
-  | "ASSIGNMENT"
-  | "TIME_ENTRY"
-  | "BONUS"
-  | "GOAL"
-  | "CONVERSATION"
-  | "MESSAGE"
-  | "SYSTEM";
+  | "User"
+  | "Client"
+  | "Project"
+  | "Goal"
+  | "Assignment"
+  | "Bonus"
+  | "TimeEntry"
+  | "Conversation"
+  | "Message"
+  | "Auth"
+  | "System"
+  | string;
 
-export interface LogAuditInput {
+export type LogAuditInput = {
   actorId?: string | null;
-  action: AuditAction;
+  action: AuditAction | string;
   entity: AuditEntity | string;
   entityId?: string | null;
-  meta?: Record<string, unknown> | null;
-}
+  meta?: any;
+};
 
 /**
- * Persist an audit log entry.
- *
- * IMPORTANT: Errors are swallowed to avoid breaking API routes.
+ * Writes an audit log row to the database.
+ * Safe to call from API routes. Never throws for JSON meta serialization issues.
  */
 export async function logAudit(input: LogAuditInput): Promise<void> {
   try {
     await prisma.auditLog.create({
       data: {
         actorId: input.actorId ?? null,
-        action: input.action as any,
-        entity: input.entity,
+        action: String(input.action),
+        entity: String(input.entity),
         entityId: input.entityId ?? null,
         meta: input.meta ?? undefined,
       },
     });
-  } catch (err) {
+  } catch (e) {
+    // Intentionally swallow errors to avoid breaking the primary action.
     // eslint-disable-next-line no-console
-    console.warn("[audit] failed to log audit event", err);
+    console.warn("Audit log write failed:", e);
   }
 }
 
 /**
- * Compatibility wrapper used in many routes: `audit.logAudit(...)` or `audit.log(...)`.
+ * Convenience wrapper used across the codebase.
+ * Signature matches older code that called `audit(actorId, action, entity, entityId, meta)`.
  */
-export const audit = {
-  logAudit,
-  log: logAudit,
+export type AuditFn = {
+  (actorId: string | null | undefined, action: string, entity: string, entityId?: string | null, meta?: any): Promise<void>;
+  logAudit: typeof logAudit;
+  log: typeof logAudit;
 };
 
-// Backwards-compatible alias (in case other modules use a different name)
-export const writeAudit = logAudit;
+export const audit: AuditFn = Object.assign(
+  async (actorId: string | null | undefined, action: string, entity: string, entityId?: string | null, meta?: any) => {
+    await logAudit({ actorId: actorId ?? null, action, entity, entityId: entityId ?? null, meta });
+  },
+  { logAudit, log: logAudit }
+);
 
 export default audit;
