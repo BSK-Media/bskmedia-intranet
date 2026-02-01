@@ -31,7 +31,8 @@ export async function POST(req: Request) {
   });
 
   setAuthCookie(token);
-  await logAudit({ actorId: user.id, action: "AUTH_LOGIN", entityType: "User", entityId: user.id });
+  // Keep AuditAction aligned with the Prisma enum (see prisma/schema.prisma)
+  await logAudit({ actorId: user.id, action: "LOGIN", entityType: "User", entityId: user.id });
 
   return NextResponse.json({ ok: true, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
 }

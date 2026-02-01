@@ -52,3 +52,9 @@ export const goalSchema = z.object({
   targetRevenue: z.coerce.number().optional().nullable(),
   bonusAmount: z.coerce.number().optional().nullable(),
 });
+
+// Auth
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
