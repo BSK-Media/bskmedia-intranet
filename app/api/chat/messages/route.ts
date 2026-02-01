@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
   const url = new URL(req.url);
   const conversationId = url.searchParams.get("conversationId");
   if (!conversationId) return badRequest("conversationId required");
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
   try {
     const body = await req.json();
     const conversationId = body?.conversationId as string | undefined;

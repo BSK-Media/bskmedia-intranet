@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
   const url = new URL(req.url);
   const month = url.searchParams.get("month"); // YYYY-MM
   let from: Date | undefined;
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
 
   try {
     const parsed = timeEntryCreateSchema.safeParse(await req.json());
@@ -61,7 +61,7 @@ export async function DELETE(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return badRequest("Brak id");
 

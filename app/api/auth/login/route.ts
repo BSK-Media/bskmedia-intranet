@@ -31,8 +31,7 @@ export async function POST(req: Request) {
   });
 
   setAuthCookie(token);
-  // Keep Prisma enum compatibility: use built-in AuditAction values.
-  await logAudit({ actorId: user.id, action: "LOGIN", entityType: "User", entityId: user.id });
+  await logAudit({ actorId: user.id, action: "AUTH_LOGIN", entityType: "User", entityId: user.id });
 
   return NextResponse.json({ ok: true, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
 }

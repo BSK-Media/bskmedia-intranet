@@ -6,7 +6,7 @@ export async function GET() {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
   const convs = await prisma.conversation.findMany({
     where: { participants: { some: { userId } } },
     include: {

@@ -6,7 +6,7 @@ export async function GET() {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
   const assignments = await prisma.assignment.findMany({
     where: { userId },
     include: { project: { include: { client: { select: { name: true } } } } },
