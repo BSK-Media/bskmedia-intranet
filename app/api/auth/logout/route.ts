@@ -5,6 +5,7 @@ import { logAudit } from "@/lib/audit";
 export async function POST() {
   const user = await getAuthUser();
   clearAuthCookie();
-  if (user?.id) await logAudit({ actorId: user.id, action: "AUTH_LOGOUT", entityType: "User", entityId: user.id });
+  // Keep Prisma enum compatibility: use built-in AuditAction values.
+  if (user?.id) await logAudit({ actorId: user.id, action: "LOGOUT", entityType: "User", entityId: user.id });
   return NextResponse.json({ ok: true });
 }
