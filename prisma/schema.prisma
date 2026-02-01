@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum BillingType {
+  FIXED
+  HOURLY
+  MONTHLY_RETAINER
+}
+
+enum ProjectCadence {
+  ONE_OFF
+  RECURRING_MONTHLY
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  DONE
+}
+
+enum TimeEntryStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum BonusType {
+  ONE_OFF
+  MONTHLY
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  VACATION
+  SICK
+}
+
+model User {
+  id                String              @id @default(cuid())
+  name              String
+  email             String              @unique
+  passwordHash      String
+  role              Role                @default(EMPLOYEE)
+  hourlyRateDefault Decimal             @default(0.0)
+  availability      AvailabilityStatus  @default(AVAILABLE)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  assignments       Assignment[]
+  timeEntries       TimeEntry[]
+  bonuses           Bonus[]
+  goals             EmployeeGoal[]
+  notifications     Notification[]
+
+  sentMessages      Message[]           @relation("MessageSender")
+  messageReads      MessageRead[]
+  auditLogs         AuditLog[]          @relation("AuditActor")
+
+  @@index([role])
+  @@index([email])
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id                   String         @id @default(cuid())
+  clientId             String
+  name                 String
+  billingType          BillingType
+  cadence              ProjectCadence @default(ONE_OFF)
+  status               ProjectStatus  @default(ACTIVE)
+  tags                 String[]       @default([])
+
+  monthlyRetainerAmount Decimal?
+  fixedClientPrice       Decimal?
+  hourlyClientRate       Decimal?
+  completedAt            DateTime?
+
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  client                Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  assignments           Assignment[]
+  timeEntries           TimeEntry[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([billingType])
+}
+
+model Assignment {
+  id                 String   @id @default(cuid())
+  userId             String
+  projectId          String
+  hourlyRateOverride Decimal?
+  fixedPayoutAmount  Decimal?
+  activeFrom         DateTime?
+  activeTo           DateTime?
+  createdAt          DateTime @default(now())
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@index([projectId])
+}
+
+model TimeEntry {
+  id           String          @id @default(cuid())
+  userId       String
+  projectId    String
+  date         DateTime
+  hours        Decimal
+  note         String?
+  status       TimeEntryStatus @default(SUBMITTED)
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewedBy   User?           @relation("ReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([userId, date])
+  @@index([projectId, date])
+  @@index([status])
+}
+
+model Bonus {
+  id        String    @id @default(cuid())
+  userId    String
+  amount    Decimal
+  type      BonusType
+  month     String?
+  note      String?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type, month])
+}
+
+model EmployeeGoal {
+  id            String   @id @default(cuid())
+  userId        String
+  month         String
+  targetHours   Decimal  @default(160.0)
+  targetRevenue Decimal?
+  bonusAmount   Decimal?
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@index([month])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  actor     User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([actorId, createdAt])
+  @@index([entity, createdAt])
+}
+
+model Conversation {
+  id           String                     @id @default(cuid())
+  type         ConversationType
+  name         String?
+  createdAt    DateTime                   @default(now())
+  participants ConversationParticipant[]
+  messages     Message[]
+  @@index([type])
+}
+
+model ConversationParticipant {
+  id             String        @id @default(cuid())
+  conversationId String
+  userId         String
+
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String
+  createdAt      DateTime    @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  reads          MessageRead[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+}
+
+model MessageRead {
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId, readAt])
+}

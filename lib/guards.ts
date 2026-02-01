@@ -1,0 +1,19 @@
+import { NextResponse } from "next/server";
+import { getAuthUser, type Role } from "@/lib/auth-cookie";
+
+export async function requireSession() {
+  const user = await getAuthUser();
+  if (!user?.id) {
+    return { ok: false as const, response: NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 }) };
+  }
+  return { ok: true as const, user };
+}
+
+export async function requireRole(roles: Role[]) {
+  const res = await requireSession();
+  if (!res.ok) return res;
+  if (!roles.includes(res.user.role)) {
+    return { ok: false as const, response: NextResponse.json({ error: "FORBIDDEN" }, { status: 403 }) };
+  }
+  return { ok: true as const, user: res.user, role: res.user.role };
+}
