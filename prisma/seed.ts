@@ -216,7 +216,8 @@ async function main() {
   });
 
   await prisma.auditLog.create({
-    data: { actorId: admin.id, action: "SEED", entity: "SYSTEM", meta: { note: "Initial seed completed" } },
+    // AuditAction enum doesn't include a dedicated SEED value; use OTHER for system seed events.
+    data: { actorId: admin.id, action: "OTHER", entity: "SYSTEM", meta: { note: "Initial seed completed" } },
   });
 
   console.log("Seed done.");
