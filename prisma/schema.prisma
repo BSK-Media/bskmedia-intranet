@@ -108,6 +108,7 @@ model Project {
   tags      String[] @default([])
 
   billingType BillingType
+  hourlyClientRate      Int? // stawka klienta za godzinę (np. w groszach)
   cadence     Cadence
   status      ProjectStatus @default(ACTIVE)
 

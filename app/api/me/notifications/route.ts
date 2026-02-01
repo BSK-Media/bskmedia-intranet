@@ -6,7 +6,7 @@ export async function GET() {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
   const items = await prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 });
   return ok(items);
 }
@@ -15,7 +15,7 @@ export async function PATCH(req: Request) {
   const auth = await requireSession();
   if (!auth.ok) return auth.response;
 
-  const userId = auth.user.id;
+  const userId = auth.session.user.id!;
   try {
     const body = await req.json();
     const id = body?.id as string | undefined;
