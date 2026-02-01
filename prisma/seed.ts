@@ -1,4 +1,4 @@
-import { PrismaClient, BillingType, ProjectCadence, ProjectStatus, Role, BonusType, ConversationType } from "@prisma/client";
+import { PrismaClient, BillingType, Cadence, ProjectStatus, Role, BonusType, ConversationType } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -67,7 +67,7 @@ async function main() {
       clientId: clientA.id,
       name: "SEO Audyt + wdrożenia",
       billingType: BillingType.HOURLY,
-      cadence: ProjectCadence.RECURRING_MONTHLY,
+      cadence: Cadence.RECURRING_MONTHLY,
       status: ProjectStatus.ACTIVE,
       hourlyClientRate: 140,
       tags: ["SEO", "Ads"],
@@ -79,7 +79,7 @@ async function main() {
       clientId: clientA.id,
       name: "Landing page (One-off)",
       billingType: BillingType.FIXED,
-      cadence: ProjectCadence.ONE_OFF,
+      cadence: Cadence.ONE_OFF,
       status: ProjectStatus.DONE,
       fixedClientPrice: 2500,
       completedAt: new Date(baseMonth.getFullYear(), baseMonth.getMonth(), 6),
@@ -92,7 +92,7 @@ async function main() {
       clientId: clientB.id,
       name: "Obsługa miesięczna (Retainer)",
       billingType: BillingType.MONTHLY_RETAINER,
-      cadence: ProjectCadence.RECURRING_MONTHLY,
+      cadence: Cadence.RECURRING_MONTHLY,
       status: ProjectStatus.ACTIVE,
       monthlyRetainerAmount: 6000,
       tags: ["Ads", "Dev"],
@@ -104,7 +104,7 @@ async function main() {
       clientId: clientB.id,
       name: "Kampania Performance",
       billingType: BillingType.HOURLY,
-      cadence: ProjectCadence.ONE_OFF,
+      cadence: Cadence.ONE_OFF,
       status: ProjectStatus.ACTIVE,
       hourlyClientRate: 180,
       tags: ["Ads"],

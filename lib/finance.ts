@@ -1,4 +1,4 @@
-import { BillingType, ProjectCadence, TimeEntryStatus } from "@prisma/client";
+import { BillingType, Cadence, TimeEntryStatus } from "@prisma/client";
 
 export type FinanceInput = {
   from: Date;
@@ -9,7 +9,7 @@ export type FinanceInput = {
     name: string;
     clientName: string;
     billingType: BillingType;
-    cadence: ProjectCadence;
+    cadence: Cadence;
     hourlyClientRate?: number | null;
     monthlyRetainerAmount?: number | null;
     fixedClientPrice?: number | null;
