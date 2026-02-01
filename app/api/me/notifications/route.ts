@@ -20,7 +20,7 @@ export async function PATCH(req: Request) {
     const body = await req.json();
     const id = body?.id as string | undefined;
     if (!id) return badRequest("Brak id");
-    await prisma.notification.updateMany({ where: { id, userId }, data: { isRead: true } });
+    await prisma.notification.updateMany({ where: { id, userId }, data: { readAt: new Date() } });
     return ok({ ok: true });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");
