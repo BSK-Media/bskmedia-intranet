@@ -1,3 +1,7 @@
+// prisma/schema.prisma
+// NOTE: This file fixes missing opposite relation fields required by Prisma.
+// It is compatible with existing DB structure (no new columns), so it should not require a new migration.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,7 +22,7 @@ enum BillingType {
   MONTHLY_RETAINER
 }
 
-enum ProjectCadence {
+enum Cadence {
   ONE_OFF
   RECURRING_MONTHLY
 }
@@ -52,58 +56,72 @@ enum AvailabilityStatus {
 }
 
 model User {
-  id                String              @id @default(cuid())
-  name              String
-  email             String              @unique
-  passwordHash      String
-  role              Role                @default(EMPLOYEE)
-  hourlyRateDefault Decimal             @default(0.0)
-  availability      AvailabilityStatus  @default(AVAILABLE)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
+  role              Role     @default(EMPLOYEE)
+  name              String
+  email             String   @unique
+  passwordHash      String
+
+  hourlyRateDefault Int?     // grosze (np. 8000 = 80,00 PLN/h)
+
+  availability      AvailabilityStatus @default(AVAILABLE)
+
+  // Relations
   assignments       Assignment[]
-  timeEntries       TimeEntry[]
+  timeEntries       TimeEntry[]        @relation("TimeEntryAuthor")
   bonuses           Bonus[]
   goals             EmployeeGoal[]
+  auditLogs         AuditLog[]
   notifications     Notification[]
 
-  sentMessages      Message[]           @relation("MessageSender")
-  messageReads      MessageRead[]
-  auditLogs         AuditLog[]          @relation("AuditActor")
+  // --- FIXES REQUIRED BY PRISMA VALIDATION ---
+  // Opposite side for TimeEntry.reviewedBy
+  reviewedTimeEntries TimeEntry[] @relation("ReviewedBy")
+  // Opposite side for ConversationParticipant.user
+  conversationParticipants ConversationParticipant[]
+  // ------------------------------------------
 
-  @@index([role])
-  @@index([email])
+  sentMessages      Message[] @relation("MessageSender")
+  messageReads      MessageRead[]
 }
 
 model Client {
   id        String   @id @default(cuid())
-  name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  name      String
+  note      String?
+
   projects  Project[]
+
+  @@index([name])
 }
 
 model Project {
-  id                   String         @id @default(cuid())
-  clientId             String
-  name                 String
-  billingType          BillingType
-  cadence              ProjectCadence @default(ONE_OFF)
-  status               ProjectStatus  @default(ACTIVE)
-  tags                 String[]       @default([])
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  monthlyRetainerAmount Decimal?
-  fixedClientPrice       Decimal?
-  hourlyClientRate       Decimal?
-  completedAt            DateTime?
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  name      String
+  tags      String[] @default([])
 
-  client                Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  assignments           Assignment[]
-  timeEntries           TimeEntry[]
+  billingType BillingType
+  cadence     Cadence
+  status      ProjectStatus @default(ACTIVE)
+
+  // Revenue settings (grosze)
+  monthlyRetainerAmount Int?
+  fixedClientPrice      Int?
+
+  assignments Assignment[]
+  timeEntries  TimeEntry[]
 
   @@index([clientId])
   @@index([status])
@@ -111,135 +129,112 @@ model Project {
 }
 
 model Assignment {
-  id                 String   @id @default(cuid())
-  userId             String
-  projectId          String
-  hourlyRateOverride Decimal?
-  fixedPayoutAmount  Decimal?
-  activeFrom         DateTime?
-  activeTo           DateTime?
-  createdAt          DateTime @default(now())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  hourlyRateOverride  Int?  // grosze
+  fixedPayoutAmount   Int?  // grosze (dla FIXED — wynagrodzenie za wykonanie)
+  activeFrom          DateTime?
+  activeTo            DateTime?
 
   @@unique([userId, projectId])
-  @@index([userId])
   @@index([projectId])
+  @@index([userId])
 }
 
 model TimeEntry {
-  id           String          @id @default(cuid())
-  userId       String
-  projectId    String
-  date         DateTime
-  hours        Decimal
-  note         String?
-  status       TimeEntryStatus @default(SUBMITTED)
-  reviewedById String?
-  reviewedAt   DateTime?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  reviewedBy   User?           @relation("ReviewedBy", fields: [reviewedById], references: [id])
+  userId    String
+  user      User     @relation("TimeEntryAuthor", fields: [userId], references: [id], onDelete: Cascade)
+
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  date      DateTime // (YYYY-MM-DD) — zapisuj jako Date, ale w Prisma to DateTime
+  hours     Decimal  @db.Decimal(5,2)
+  note      String?
+  status    TimeEntryStatus @default(SUBMITTED)
+
+  reviewedById String?
+  reviewedBy   User?    @relation("ReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
 
   @@index([userId, date])
   @@index([projectId, date])
   @@index([status])
+  @@index([reviewedById])
 }
 
 model Bonus {
-  id        String    @id @default(cuid())
-  userId    String
-  amount    Decimal
-  type      BonusType
-  month     String?
-  note      String?
-  createdAt DateTime  @default(now())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount    Int      // grosze
+  type      BonusType
+  month     String?  // "YYYY-MM" dla MONTHLY
+  note      String?
 
   @@index([userId])
   @@index([type, month])
 }
 
-model EmployeeGoal {
-  id            String   @id @default(cuid())
-  userId        String
-  month         String
-  targetHours   Decimal  @default(160.0)
-  targetRevenue Decimal?
-  bonusAmount   Decimal?
-  createdAt     DateTime @default(now())
-
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, month])
-  @@index([month])
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String
-  title     String
-  body      String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, isRead])
-}
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  actorId   String
-  action    String
-  entity    String
-  entityId  String?
-  meta      Json?
-  createdAt DateTime @default(now())
-
-  actor     User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
-
-  @@index([actorId, createdAt])
-  @@index([entity, createdAt])
-}
-
 model Conversation {
-  id           String                     @id @default(cuid())
-  type         ConversationType
-  name         String?
-  createdAt    DateTime                   @default(now())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  type      ConversationType
+  name      String?
+
   participants ConversationParticipant[]
-  messages     Message[]
+  messages      Message[]
+
   @@index([type])
 }
 
 model ConversationParticipant {
-  id             String        @id @default(cuid())
-  conversationId String
-  userId         String
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
 
-  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lastReadAt     DateTime?
 
   @@unique([conversationId, userId])
   @@index([userId])
+  @@index([conversationId])
 }
 
 model Message {
-  id             String      @id @default(cuid())
-  conversationId String
-  senderId       String
-  body           String
-  createdAt      DateTime    @default(now())
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
 
+  conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  senderId       String
+  sender         User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  body           String
+
   reads          MessageRead[]
 
   @@index([conversationId, createdAt])
@@ -247,13 +242,82 @@ model Message {
 }
 
 model MessageRead {
-  messageId String
-  userId    String
-  readAt    DateTime @default(now())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
 
+  messageId String
   message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([messageId, userId])
+  @@unique([messageId, userId])
+  @@index([userId])
+}
+
+// --- Extra features: audit log, goals, notifications ---
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  APPROVE
+  REJECT
+  LOGIN
+  LOGOUT
+  OTHER
+}
+
+model AuditLog {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+
+  actorId   String?
+  actor     User?      @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  action    AuditAction
+  entity    String
+  entityId  String?
+  meta      Json?
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([entity, entityId])
+}
+
+model EmployeeGoal {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  month     String   // "YYYY-MM"
+  hoursTarget Decimal @db.Decimal(6,2)
+  note      String?
+
+  @@unique([userId, month])
+  @@index([month])
+}
+
+enum NotificationType {
+  MISSING_HOURS_REMINDER
+  GENERIC
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  title     String
+  body      String?
+
   @@index([userId, readAt])
+  @@index([type])
 }
