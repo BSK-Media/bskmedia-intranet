@@ -75,7 +75,10 @@ export default function ClientsPage() {
                   headers: { "content-type": "application/json" },
                   body: JSON.stringify(payload),
                 });
-                if (!res.ok) return toast.error("Błąd zapisu");
+                if (!res.ok) {
+                  toast.error("Błąd zapisu");
+                  return;
+                }
                 toast.success("Zapisano");
                 await mutate();
               }}
@@ -100,7 +103,10 @@ export default function ClientsPage() {
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({ ...payload, id: editing.id }),
                   });
-                  if (!res.ok) return toast.error("Błąd zapisu");
+                  if (!res.ok) {
+                    toast.error("Błąd zapisu");
+                    return;
+                  }
                   toast.success("Zapisano");
                   setEditing(null);
                   await mutate();
