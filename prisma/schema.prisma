@@ -1,5 +1,5 @@
 // prisma/schema.prisma
-// Patched: EmployeeGoal now includes createdAt/updatedAt and targetHours/targetRevenue/bonusAmount fields.
+// Patched: Project now includes `completedAt` (nullable) used by API when status changes to DONE.
 
 generator client {
   provider = "prisma-client-js"
@@ -75,7 +75,7 @@ model User {
   auditLogs         AuditLog[]
   notifications     Notification[]
 
-  reviewedTimeEntries     TimeEntry[] @relation("ReviewedBy")
+  reviewedTimeEntries      TimeEntry[] @relation("ReviewedBy")
   conversationParticipants ConversationParticipant[]
 
   sentMessages      Message[] @relation("MessageSender")
@@ -110,8 +110,12 @@ model Project {
   cadence     Cadence
   status      ProjectStatus @default(ACTIVE)
 
+  // Revenue settings (grosze)
   monthlyRetainerAmount Int?
   fixedClientPrice      Int?
+
+  // Patched: set when project becomes DONE
+  completedAt DateTime?
 
   assignments Assignment[]
   timeEntries  TimeEntry[]
@@ -119,6 +123,7 @@ model Project {
   @@index([clientId])
   @@index([status])
   @@index([billingType])
+  @@index([completedAt])
 }
 
 model Assignment {
@@ -277,7 +282,6 @@ model AuditLog {
   @@index([entity, entityId])
 }
 
-// Patched model to match API usage (targetHours, createdAt ordering)
 model EmployeeGoal {
   id            String   @id @default(cuid())
   createdAt     DateTime @default(now())
@@ -286,7 +290,7 @@ model EmployeeGoal {
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  month         String   // "YYYY-MM"
+  month         String
 
   targetHours   Decimal  @db.Decimal(6,2)
   targetRevenue Int?
