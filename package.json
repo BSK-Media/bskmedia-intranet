@@ -12,7 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "seed": "tsx prisma/seed.ts",
     "test": "vitest run",
-    "vercel-build": "prisma generate && tsx prisma/ensure-admin.ts && next build"
+    "vercel-build": "prisma generate && prisma migrate deploy && tsx prisma/ensure-admin.ts && next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

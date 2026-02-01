@@ -35,7 +35,7 @@ export function SelectContent({ className, ...props }: React.ComponentPropsWitho
         position="popper"
         sideOffset={6}
         className={cn(
-          "z-50 max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
+          "z-[1000] max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
           className,
         )}
         {...props}

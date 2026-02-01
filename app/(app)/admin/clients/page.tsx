@@ -79,7 +79,8 @@ export default function ClientsPage() {
                   body: JSON.stringify(payload),
                 });
                 if (!res.ok) {
-                  toast.error("Błąd zapisu");
+                  const err = await res.json().catch(() => null);
+                  toast.error(err?.message || err?.error || "Błąd zapisu");
                   return;
                 }
                 toast.success("Zapisano");
@@ -107,7 +108,8 @@ export default function ClientsPage() {
                     body: JSON.stringify({ ...payload, id: editing.id }),
                   });
                   if (!res.ok) {
-                    toast.error("Błąd zapisu");
+                    const err = await res.json().catch(() => null);
+                    toast.error(err?.message || err?.error || "Błąd zapisu");
                     return;
                   }
                   toast.success("Zapisano");

@@ -34,7 +34,7 @@ export default function LoginClient() {
         return;
       }
       toast.success("Zalogowano");
-      router.replace(next);
+      window.location.href = next;
     } catch (err: any) {
       toast.error(err?.message || "Błąd");
     } finally {

@@ -1,10 +1,10 @@
-import { requireRole } from "@/lib/guards";
+import { requireAdminToken } from "@/lib/guards";
 import { ok, badRequest, serverError } from "@/lib/http";
 import { prisma } from "@/lib/db";
 import { clearImpersonationCookie, setImpersonationCookie } from "@/lib/effective-auth";
 
 export async function POST(req: Request) {
-  const auth = await requireRole(["ADMIN"]);
+  const auth = await requireAdminToken();
   if (!auth.ok) return auth.response;
 
   try {
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE() {
-  const auth = await requireRole(["ADMIN"]);
+  const auth = await requireAdminToken();
   if (!auth.ok) return auth.response;
   clearImpersonationCookie();
   return ok({ ok: true });

@@ -62,7 +62,14 @@ export function setAuthCookie(token: string) {
 }
 
 export function clearAuthCookie() {
-  cookies().set({ name: COOKIE_NAME, value: "", path: "/", maxAge: 0 });
+  cookies().set({
+    name: COOKIE_NAME,
+    value: "",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
 }
-
 export const AUTH_COOKIE_NAME = COOKIE_NAME;

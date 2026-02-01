@@ -42,9 +42,16 @@ export async function getEffectiveAuth(): Promise<EffectiveAuth> {
 }
 
 export function clearImpersonationCookie() {
-  cookies().set({ name: IMPERSONATE_COOKIE_NAME, value: "", path: "/", maxAge: 0 });
+  cookies().set({
+    name: IMPERSONATE_COOKIE_NAME,
+    value: "",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
 }
-
 export function setImpersonationCookie(userId: string) {
   cookies().set({
     name: IMPERSONATE_COOKIE_NAME,
