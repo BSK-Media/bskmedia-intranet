@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       } as any,
     });
 
-    await audit(auth.session.user.id, "CREATE", "Project", created.id, { name: created.name });
+    await audit(auth.user.id, "CREATE", "Project", created.id, { name: created.name });
     return ok(created, { status: 201 });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

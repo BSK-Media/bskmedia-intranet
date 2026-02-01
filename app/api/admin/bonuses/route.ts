@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     if (!parsed.success) return badRequest("Niepoprawne dane", { issues: parsed.error.issues });
 
     const created = await prisma.bonus.create({ data: { ...parsed.data, month: parsed.data.month ?? null, note: parsed.data.note ?? null } as any });
-    await audit(auth.session.user.id, "CREATE", "Bonus", created.id, { userId: created.userId, amount: created.amount });
+    await audit(auth.user.id, "CREATE", "Bonus", created.id, { userId: created.userId, amount: created.amount });
     return ok(created, { status: 201 });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");
@@ -40,7 +40,7 @@ export async function DELETE(req: Request) {
 
   try {
     await prisma.bonus.delete({ where: { id } });
-    await audit(auth.session.user.id, "DELETE", "Bonus", id);
+    await audit(auth.user.id, "DELETE", "Bonus", id);
     return ok({ ok: true });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

@@ -13,7 +13,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (!parsed.success) return badRequest("Niepoprawne dane", { issues: parsed.error.issues });
 
     const updated = await prisma.client.update({ where: { id: params.id }, data: { name: parsed.data.name } });
-    await audit(auth.session.user.id, "UPDATE", "Client", updated.id, { name: updated.name });
+    await audit(auth.user.id, "UPDATE", "Client", updated.id, { name: updated.name });
     return ok(updated);
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");
@@ -26,7 +26,7 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
 
   try {
     await prisma.client.delete({ where: { id: params.id } });
-    await audit(auth.session.user.id, "DELETE", "Client", params.id);
+    await audit(auth.user.id, "DELETE", "Client", params.id);
     return ok({ ok: true });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

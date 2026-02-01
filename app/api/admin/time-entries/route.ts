@@ -31,10 +31,10 @@ export async function PATCH(req: Request) {
 
     const updated = await prisma.timeEntry.update({
       where: { id },
-      data: { status, reviewedById: auth.session.user.id, reviewedAt: new Date() },
+      data: { status, reviewedById: auth.user.id, reviewedAt: new Date() },
     });
 
-    await audit(auth.session.user.id, "REVIEW", "TimeEntry", updated.id, { status });
+    await audit(auth.user.id, "REVIEW", "TimeEntry", updated.id, { status });
     return ok(updated);
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");
@@ -50,7 +50,7 @@ export async function DELETE(req: Request) {
 
   try {
     await prisma.timeEntry.delete({ where: { id } });
-    await audit(auth.session.user.id, "DELETE", "TimeEntry", id);
+    await audit(auth.user.id, "DELETE", "TimeEntry", id);
     return ok({ ok: true });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     if (!parsed.success) return badRequest("Niepoprawne dane", { issues: parsed.error.issues });
 
     const created = await prisma.client.create({ data: { name: parsed.data.name } });
-    await audit(auth.session.user.id, "CREATE", "Client", created.id, { name: created.name });
+    await audit(auth.user.id, "CREATE", "Client", created.id, { name: created.name });
     return ok(created, { status: 201 });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

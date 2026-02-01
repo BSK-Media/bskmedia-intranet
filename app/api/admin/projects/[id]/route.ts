@@ -27,7 +27,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       } as any,
     });
 
-    await audit(auth.session.user.id, "UPDATE", "Project", updated.id, { name: updated.name });
+    await audit(auth.user.id, "UPDATE", "Project", updated.id, { name: updated.name });
     return ok(updated);
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");
@@ -40,7 +40,7 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
 
   try {
     await prisma.project.delete({ where: { id: params.id } });
-    await audit(auth.session.user.id, "DELETE", "Project", params.id);
+    await audit(auth.user.id, "DELETE", "Project", params.id);
     return ok({ ok: true });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       },
     });
 
-    await audit(auth.session.user.id, "UPSERT", "EmployeeGoal", upserted.id, { userId: upserted.userId, month: upserted.month });
+    await audit(auth.user.id, "UPSERT", "EmployeeGoal", upserted.id, { userId: upserted.userId, month: upserted.month });
     return ok(upserted);
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");
@@ -57,7 +57,7 @@ export async function DELETE(req: Request) {
 
   try {
     await prisma.employeeGoal.delete({ where: { id } });
-    await audit(auth.session.user.id, "DELETE", "EmployeeGoal", id);
+    await audit(auth.user.id, "DELETE", "EmployeeGoal", id);
     return ok({ ok: true });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

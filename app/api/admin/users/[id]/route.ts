@@ -23,7 +23,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (parsed.data.password) data.passwordHash = await bcrypt.hash(parsed.data.password, 10);
 
     const updated = await prisma.user.update({ where: { id: params.id }, data });
-    await audit(auth.session.user.id, "UPDATE", "User", updated.id, { email: updated.email, role: updated.role });
+    await audit(auth.user.id, "UPDATE", "User", updated.id, { email: updated.email, role: updated.role });
     return ok(updated);
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");
@@ -36,7 +36,7 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
 
   try {
     await prisma.user.delete({ where: { id: params.id } });
-    await audit(auth.session.user.id, "DELETE", "User", params.id);
+    await audit(auth.user.id, "DELETE", "User", params.id);
     return ok({ ok: true });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

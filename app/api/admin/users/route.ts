@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       },
     });
 
-    await audit(auth.session.user.id, "CREATE", "User", created.id, { email: created.email, role: created.role });
+    await audit(auth.user.id, "CREATE", "User", created.id, { email: created.email, role: created.role });
     return ok(created, { status: 201 });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");
