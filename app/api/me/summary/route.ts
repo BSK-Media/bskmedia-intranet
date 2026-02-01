@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     const report = await buildReport(from, to);
 
-    const userId = auth.session.user.id!;
+    const userId = auth.user.id;
     const me = report.employees.find((e) => e.userId === userId);
 
     const myAssignments = await prisma.assignment.findMany({ where: { userId }, select: { projectId: true } });
