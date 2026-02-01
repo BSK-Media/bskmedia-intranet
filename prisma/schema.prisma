@@ -286,20 +286,19 @@ model AuditLog {
 }
 
 model EmployeeGoal {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  userId        String
+  month         String    // "YYYY-MM"
+  targetHours   Decimal   @db.Decimal(6, 2)
+  targetRevenue Decimal?  @db.Decimal(12, 2)
+  bonusAmount   Decimal?  @db.Decimal(12, 2)
+  note          String?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  month     String   // "YYYY-MM"
-  hoursTarget Decimal @db.Decimal(6,2)
-  note      String?
-
-  @@unique([userId, month])
-  @@index([month])
+  @@unique([userId, month], name: "userId_month")
+  @@index([userId])
 }
+
 
 enum NotificationType {
   MISSING_HOURS_REMINDER
