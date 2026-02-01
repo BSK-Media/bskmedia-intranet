@@ -1,5 +1,6 @@
 // prisma/schema.prisma
-// Patched: Project now includes `completedAt` (nullable) used by API when status changes to DONE.
+// Patched: NotificationType enum now includes `MISSING_HOURS` (used by reminders API),
+// while keeping existing values for compatibility.
 
 generator client {
   provider = "prisma-client-js"
@@ -114,7 +115,7 @@ model Project {
   monthlyRetainerAmount Int?
   fixedClientPrice      Int?
 
-  // Patched: set when project becomes DONE
+  // Set when project becomes DONE
   completedAt DateTime?
 
   assignments Assignment[]
@@ -303,6 +304,10 @@ model EmployeeGoal {
 }
 
 enum NotificationType {
+  // New value required by app/api/admin/reminders/generate
+  MISSING_HOURS
+
+  // Existing values kept for compatibility
   MISSING_HOURS_REMINDER
   GENERIC
 }
