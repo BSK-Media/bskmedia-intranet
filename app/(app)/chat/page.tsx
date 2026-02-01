@@ -14,7 +14,9 @@ export default function ChatPage() {
   const { user } = useAuth();
   const meId = user?.id;
 
-  const { data: convs } = useSWR("/api/chat/conversations", fetcher, { refreshInterval: 5000 });
+  const { data: convs, mutate: mutateConvs } = useSWR("/api/chat/conversations", fetcher, { refreshInterval: 5000 });
+  const { data: users } = useSWR("/api/chat/users", fetcher);
+  const [newUserId, setNewUserId] = React.useState("");
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -23,6 +25,20 @@ export default function ChatPage() {
 
   const { data: messages, mutate } = useSWR(activeId ? `/api/chat/messages?conversationId=${activeId}` : null, fetcher, { refreshInterval: 2500 });
   const [text, setText] = React.useState("");
+
+  async function startConversation() {
+    if (!newUserId) return;
+    const res = await fetch("/api/chat/conversations", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ participantId: newUserId }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    setNewUserId("");
+    setActiveId(data.id);
+    await mutateConvs();
+  }
 
   async function send() {
     if (!activeId || !text.trim()) return;
@@ -43,7 +59,25 @@ export default function ChatPage() {
         <CardHeader>
           <CardTitle>Konwersacje</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <select
+              className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              value={newUserId}
+              onChange={(e) => setNewUserId(e.target.value)}
+            >
+              <option value="">Wybierz pracownika…</option>
+              {(users ?? []).map((u: any) => (
+                <option key={u.id} value={u.id}>
+                  {u.name ?? u.email}
+                </option>
+              ))}
+            </select>
+            <Button onClick={startConversation} disabled={!newUserId}>
+              Start
+            </Button>
+          </div>
+
           {(convs ?? []).map((c: any) => (
             <button
               key={c.id}
