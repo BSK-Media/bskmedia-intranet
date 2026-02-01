@@ -1,4 +1,11 @@
 // lib/audit.ts
+//
+// This module supports two import styles used across the codebase:
+// 1) import { logAudit } from "@/lib/audit"
+// 2) import { audit } from "@/lib/audit"
+//
+// Both are provided below for compatibility.
+
 import prisma from "@/lib/prisma";
 
 export type AuditAction =
@@ -18,6 +25,7 @@ export type AuditEntity =
   | "ASSIGNMENT"
   | "TIME_ENTRY"
   | "BONUS"
+  | "GOAL"
   | "CONVERSATION"
   | "MESSAGE"
   | "SYSTEM";
@@ -52,7 +60,15 @@ export async function logAudit(input: LogAuditInput): Promise<void> {
   }
 }
 
+/**
+ * Compatibility wrapper used in many routes: `audit.logAudit(...)` or `audit.log(...)`.
+ */
+export const audit = {
+  logAudit,
+  log: logAudit,
+};
+
 // Backwards-compatible alias (in case other modules use a different name)
 export const writeAudit = logAudit;
 
-export default logAudit;
+export default audit;
