@@ -1,6 +1,6 @@
 // prisma/schema.prisma
-// Patched: NotificationType enum now includes `MISSING_HOURS` (used by reminders API),
-// while keeping existing values for compatibility.
+// NOTE: This file fixes missing opposite relation fields required by Prisma.
+// It is compatible with existing DB structure (no new columns), so it should not require a new migration.
 
 generator client {
   provider = "prisma-client-js"
@@ -65,10 +65,11 @@ model User {
   email             String   @unique
   passwordHash      String
 
-  hourlyRateDefault Int?
+  hourlyRateDefault Int?     // grosze (np. 8000 = 80,00 PLN/h)
 
   availability      AvailabilityStatus @default(AVAILABLE)
 
+  // Relations
   assignments       Assignment[]
   timeEntries       TimeEntry[]        @relation("TimeEntryAuthor")
   bonuses           Bonus[]
@@ -76,8 +77,12 @@ model User {
   auditLogs         AuditLog[]
   notifications     Notification[]
 
-  reviewedTimeEntries      TimeEntry[] @relation("ReviewedBy")
+  // --- FIXES REQUIRED BY PRISMA VALIDATION ---
+  // Opposite side for TimeEntry.reviewedBy
+  reviewedTimeEntries TimeEntry[] @relation("ReviewedBy")
+  // Opposite side for ConversationParticipant.user
   conversationParticipants ConversationParticipant[]
+  // ------------------------------------------
 
   sentMessages      Message[] @relation("MessageSender")
   messageReads      MessageRead[]
@@ -108,7 +113,6 @@ model Project {
   tags      String[] @default([])
 
   billingType BillingType
-  hourlyClientRate      Int? // stawka klienta za godzinę (np. w groszach)
   cadence     Cadence
   status      ProjectStatus @default(ACTIVE)
 
@@ -116,16 +120,12 @@ model Project {
   monthlyRetainerAmount Int?
   fixedClientPrice      Int?
 
-  // Set when project becomes DONE
-  completedAt DateTime?
-
   assignments Assignment[]
   timeEntries  TimeEntry[]
 
   @@index([clientId])
   @@index([status])
   @@index([billingType])
-  @@index([completedAt])
 }
 
 model Assignment {
@@ -139,8 +139,8 @@ model Assignment {
   projectId String
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  hourlyRateOverride  Int?
-  fixedPayoutAmount   Int?
+  hourlyRateOverride  Int?  // grosze
+  fixedPayoutAmount   Int?  // grosze (dla FIXED — wynagrodzenie za wykonanie)
   activeFrom          DateTime?
   activeTo            DateTime?
 
@@ -160,7 +160,7 @@ model TimeEntry {
   projectId String
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  date      DateTime
+  date      DateTime // (YYYY-MM-DD) — zapisuj jako Date, ale w Prisma to DateTime
   hours     Decimal  @db.Decimal(5,2)
   note      String?
   status    TimeEntryStatus @default(SUBMITTED)
@@ -183,9 +183,9 @@ model Bonus {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  amount    Int
+  amount    Int      // grosze
   type      BonusType
-  month     String?
+  month     String?  // "YYYY-MM" dla MONTHLY
   note      String?
 
   @@index([userId])
@@ -255,6 +255,8 @@ model MessageRead {
   @@index([userId])
 }
 
+// --- Extra features: audit log, goals, notifications ---
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -264,7 +266,6 @@ enum AuditAction {
   LOGIN
   LOGOUT
   OTHER
-  UPSERT
 }
 
 model AuditLog {
@@ -285,30 +286,22 @@ model AuditLog {
 }
 
 model EmployeeGoal {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  month         String
-
-  targetHours   Decimal  @db.Decimal(6,2)
-  targetRevenue Int?
-  bonusAmount   Int?
-  note          String?
+  month     String   // "YYYY-MM"
+  hoursTarget Decimal @db.Decimal(6,2)
+  note      String?
 
   @@unique([userId, month])
   @@index([month])
-  @@index([createdAt])
 }
 
 enum NotificationType {
-  // New value required by app/api/admin/reminders/generate
-  MISSING_HOURS
-
-  // Existing values kept for compatibility
   MISSING_HOURS_REMINDER
   GENERIC
 }

@@ -165,8 +165,10 @@ async function main() {
     ],
   });
 
+  // NotificationType enum in schema.prisma does not include "INFO".
+  // Use a generic notification for the welcome message.
   await prisma.notification.create({
-    data: { userId: emp1.id, type: "INFO", title: "Witaj!", body: "Masz nowe projekty i wpisy czasu do uzupełnienia." },
+    data: { userId: emp1.id, type: "GENERIC", title: "Witaj!", body: "Masz nowe projekty i wpisy czasu do uzupełnienia." },
   });
 
   const general = await prisma.conversation.create({
