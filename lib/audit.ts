@@ -1,75 +1,69 @@
+// lib/audit.ts
+// Callable audit helper + explicit exports.
+// Patch: LogAuditInput supports both `entity` and legacy `entityType` fields.
+
 import { prisma } from "@/lib/prisma";
-
-export type AuditAction =
-  | "LOGIN"
-  | "LOGOUT"
-  | "CREATE"
-  | "UPDATE"
-  | "DELETE"
-  | "UPSERT"
-  | "EXPORT"
-  | "IMPORT"
-  | "OTHER";
-
-export type AuditEntity =
-  | "User"
-  | "Client"
-  | "Project"
-  | "Goal"
-  | "Assignment"
-  | "Bonus"
-  | "TimeEntry"
-  | "Conversation"
-  | "Message"
-  | "Auth"
-  | "System"
-  | string;
+import type { AuditAction } from "@prisma/client";
 
 export type LogAuditInput = {
   actorId?: string | null;
   action: AuditAction | string;
-  entity: AuditEntity | string;
+  /** Preferred: model/entity name, e.g. "Project" */
+  entity?: string;
+  /** Backward-compat alias used in some routes (e.g. login) */
+  entityType?: string;
   entityId?: string | null;
   meta?: any;
 };
 
-/**
- * Writes an audit log row to the database.
- * Safe to call from API routes. Never throws for JSON meta serialization issues.
- */
-export async function logAudit(input: LogAuditInput): Promise<void> {
+async function logAuditImpl(input: LogAuditInput): Promise<void> {
+  const entity = input.entity ?? input.entityType ?? "Unknown";
+  const action = input.action as AuditAction;
+
   try {
     await prisma.auditLog.create({
       data: {
         actorId: input.actorId ?? null,
-        action: String(input.action),
-        entity: String(input.entity),
+        action,
+        entity,
         entityId: input.entityId ?? null,
         meta: input.meta ?? undefined,
       },
     });
   } catch (e) {
-    // Intentionally swallow errors to avoid breaking the primary action.
-    // eslint-disable-next-line no-console
-    console.warn("Audit log write failed:", e);
+    // audit must never break API
+    console.error("[audit] failed", e);
   }
 }
 
 /**
- * Convenience wrapper used across the codebase.
- * Signature matches older code that called `audit(actorId, action, entity, entityId, meta)`.
+ * Callable form used in many routes:
+ * await audit(actorId, "UPSERT", "Assignment", id, meta)
  */
-export type AuditFn = {
-  (actorId: string | null | undefined, action: string, entity: string, entityId?: string | null, meta?: any): Promise<void>;
-  logAudit: typeof logAudit;
-  log: typeof logAudit;
+export async function audit(
+  actorId: string | null | undefined,
+  action: AuditAction | string,
+  entity: string,
+  entityId?: string | null,
+  meta?: any
+): Promise<void> {
+  return logAuditImpl({ actorId: actorId ?? null, action, entity, entityId: entityId ?? null, meta });
+}
+
+// Also provide object-style + named export for clarity
+export const logAudit = logAuditImpl;
+export const auditApi = {
+  logAudit: logAuditImpl,
+  log: logAuditImpl,
 };
 
-export const audit: AuditFn = Object.assign(
-  async (actorId: string | null | undefined, action: string, entity: string, entityId?: string | null, meta?: any) => {
-    await logAudit({ actorId: actorId ?? null, action, entity, entityId: entityId ?? null, meta });
-  },
-  { logAudit, log: logAudit }
-);
+// For backwards imports:
+// import { audit } from "@/lib/audit" (callable)
+// import { logAudit } from "@/lib/audit" (object literal input)
+// import auditDefault from "@/lib/audit" (callable with props)
+
+// Attach methods to callable function so `audit.log(...)` works too
+(audit as any).logAudit = logAuditImpl;
+(audit as any).log = logAuditImpl;
 
 export default audit;
