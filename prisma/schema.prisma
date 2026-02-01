@@ -91,6 +91,11 @@ model Client {
   name      String
   note      String?
 
+  // Optional contact details
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+
   projects  Project[]
 
   @@index([name])

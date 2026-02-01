@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const clientSchema = z.object({ name: z.string().min(2, "Nazwa jest wymagana") });
+export const clientSchema = z.object({
+  name: z.string().min(2, "Nazwa jest wymagana"),
+  note: z.string().optional().nullable(),
+  contactName: z.string().optional().nullable(),
+  contactEmail: z.string().email().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+});
 
 export const projectSchema = z.object({
   name: z.string().min(2),

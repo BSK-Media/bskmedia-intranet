@@ -37,7 +37,9 @@ export async function middleware(req: NextRequest) {
   if (!user?.email) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("from", pathname);
+    // Always land on the app's role-based home redirect after logging in.
+    // This avoids getting "stuck" inside admin sub-routes after session expiry.
+    url.searchParams.set("next", "/");
     return NextResponse.redirect(url);
   }
 
@@ -47,7 +49,11 @@ export async function middleware(req: NextRequest) {
     if (role !== "ADMIN") return NextResponse.redirect(new URL("/me", req.url));
   }
 
-  if (pathname.startsWith("/me") && role === "ADMIN") return NextResponse.redirect(new URL("/admin", req.url));
+  // Allow admins to open the employee panel when impersonating.
+  const isImpersonating = !!req.cookies.get("bsk_impersonate")?.value;
+  if (pathname.startsWith("/me") && role === "ADMIN" && !isImpersonating) {
+    return NextResponse.redirect(new URL("/admin", req.url));
+  }
 
   return NextResponse.next();
 }

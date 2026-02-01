@@ -11,7 +11,9 @@ import { toast } from "sonner";
 export default function LoginClient() {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/";
+  // We always redirect to the root, which then routes users based on their role.
+  // This prevents staying on stale admin subpages after login.
+  const next = "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +34,7 @@ export default function LoginClient() {
         return;
       }
       toast.success("Zalogowano");
-      router.push(next);
+      router.replace(next);
     } catch (err: any) {
       toast.error(err?.message || "Błąd");
     } finally {

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAuthUser, type Role } from "@/lib/auth-cookie";
+import { type Role } from "@/lib/auth-cookie";
+import { getEffectiveAuth } from "@/lib/effective-auth";
 
 export async function requireSession() {
-  const user = await getAuthUser();
+  const { user } = await getEffectiveAuth();
   if (!user?.id) {
     return { ok: false as const, response: NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 }) };
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, Users, Briefcase, Building2, ClipboardList, Gift, BarChart3, MessageSquare, Shield, Bell, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ type NavItem = { href: string; label: string; icon: React.ReactNode };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, loading, logout } = useAuth();
+  const { user, adminUser, impersonating, loading, logout, stopImpersonation } = useAuth();
   const role = user?.role;
 
   const adminNav: NavItem[] = [
@@ -46,8 +47,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex">
         <aside className="sticky top-0 h-screen w-[260px] border-r border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
           <div className="mb-6">
-            <div className="text-lg font-semibold">BSK MEDIA</div>
-            <div className="text-xs text-zinc-500">Intranet</div>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/logo.png"
+                alt="BSK Media"
+                width={44}
+                height={44}
+                className="rounded-xl"
+                priority
+              />
+              <div>
+                <div className="text-lg font-semibold leading-tight">BSK MEDIA</div>
+                <div className="text-xs text-zinc-500">Agencja kreatywna • Intranet</div>
+              </div>
+            </div>
           </div>
 
           <nav className="space-y-1">
@@ -72,8 +85,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1">
           <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 p-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">{role === "ADMIN" ? "Panel Administratora" : "Panel Pracownika"}</div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col">
+                <div className="text-sm text-zinc-600 dark:text-zinc-400">{role === "ADMIN" ? "Panel Administratora" : "Panel Pracownika"}</div>
+                {impersonating && adminUser ? (
+                  <div className="text-xs text-amber-600 dark:text-amber-400">
+                    Podgląd jako: <b>{user?.name}</b> • zalogowany admin: <b>{adminUser.name}</b>
+                  </div>
+                ) : null}
+              </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -83,6 +103,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={logout}>Wyloguj</DropdownMenuItem>
+                  {impersonating ? (
+                    <DropdownMenuItem onClick={stopImpersonation}>Zakończ podgląd</DropdownMenuItem>
+                  ) : null}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

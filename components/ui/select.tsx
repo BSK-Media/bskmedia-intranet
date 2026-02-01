@@ -32,7 +32,12 @@ export function SelectContent({ className, ...props }: React.ComponentPropsWitho
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
-        className={cn("z-50 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950", className)}
+        position="popper"
+        sideOffset={6}
+        className={cn(
+          "z-50 max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
+          className,
+        )}
         {...props}
       >
         <SelectPrimitive.Viewport className="p-1" />
