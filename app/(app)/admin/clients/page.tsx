@@ -44,7 +44,10 @@ export default function ClientsPage() {
             onClick={async () => {
               if (!confirm(`Usunąć klienta „${row.original.name}”?`)) return;
               const res = await fetch(`/api/admin/clients?id=${encodeURIComponent(row.original.id)}`, { method: "DELETE" });
-              if (!res.ok) return toast.error("Nie udało się usunąć");
+              if (!res.ok) {
+                toast.error("Nie udało się usunąć");
+                return;
+              }
               toast.success("Usunięto");
               await mutate();
             }}

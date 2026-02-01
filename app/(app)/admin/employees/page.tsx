@@ -48,9 +48,12 @@ export default function EmployeesPage() {
                   headers: { "content-type": "application/json" },
                   body: JSON.stringify({ userId: row.original.id }),
                 });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) return toast.error(data?.message ?? "Nie udało się uruchomić podglądu");
-                router.push("/me");
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) {
+					toast.error(data?.message ?? "Nie udało się uruchomić podglądu");
+					return;
+				}
+				router.push("/me");
               }}
             >
               Podgląd
@@ -66,9 +69,12 @@ export default function EmployeesPage() {
             onClick={async () => {
               if (!confirm(`Usunąć użytkownika „${row.original.name}”?`)) return;
               const res = await fetch(`/api/admin/users?id=${encodeURIComponent(row.original.id)}`, { method: "DELETE" });
-              const data = await res.json().catch(() => ({}));
-              if (!res.ok) return toast.error(data?.message || "Nie udało się usunąć");
-              toast.success("Usunięto");
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) {
+					toast.error(data?.message || "Nie udało się usunąć");
+					return;
+				}
+				toast.success("Usunięto");
               await mutate();
             }}
           >
@@ -98,9 +104,12 @@ export default function EmployeesPage() {
                   headers: { "content-type": "application/json" },
                   body: JSON.stringify(payload),
                 });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) return toast.error(data?.message || "Błąd zapisu");
-                toast.success("Zapisano");
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) {
+					toast.error(data?.message || "Błąd zapisu");
+					return;
+				}
+				toast.success("Zapisano");
                 await mutate();
               }}
             />
@@ -124,9 +133,12 @@ export default function EmployeesPage() {
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({ ...payload, id: editing.id }),
                   });
-                  const data = await res.json().catch(() => ({}));
-                  if (!res.ok) return toast.error(data?.message || "Błąd zapisu");
-                  toast.success("Zapisano");
+					const data = await res.json().catch(() => ({}));
+					if (!res.ok) {
+						toast.error(data?.message || "Błąd zapisu");
+						return;
+					}
+					toast.success("Zapisano");
                   setEditing(null);
                   await mutate();
                 }}

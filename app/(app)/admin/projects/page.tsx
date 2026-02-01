@@ -42,7 +42,10 @@ function CreateProject({ onDone }: { onDone: () => void }) {
     if (monthlyRetainerAmount) payload.monthlyRetainerAmount = Number(monthlyRetainerAmount);
 
     const res = await fetch("/api/admin/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-    if (!res.ok) return toast.error("Błąd zapisu");
+    if (!res.ok) {
+      toast.error("Błąd zapisu");
+      return;
+    }
     onDone();
   }
 

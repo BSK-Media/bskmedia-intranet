@@ -14,7 +14,10 @@ export default function RemindersPage() {
     setLoading(true);
     const res = await fetch("/api/admin/reminders/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ month }) });
     setLoading(false);
-    if (!res.ok) return toast.error("Błąd");
+    if (!res.ok) {
+      toast.error("Błąd");
+      return;
+    }
     toast.success("Wygenerowano powiadomienia");
   }
 

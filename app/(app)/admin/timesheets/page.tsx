@@ -34,7 +34,10 @@ export default function TimesheetsPage() {
 
   async function review(id: string, s: "APPROVED" | "REJECTED") {
     const res = await fetch("/api/admin/time-entries", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, status: s }) });
-    if (!res.ok) return toast.error("Błąd");
+    if (!res.ok) {
+      toast.error("Błąd");
+      return;
+    }
     toast.success("Zapisano");
     mutate();
   }
