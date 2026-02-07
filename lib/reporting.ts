@@ -2,12 +2,20 @@ import { prisma } from "@/lib/db";
 import { computePeriodReport } from "@/lib/finance";
 
 export async function buildReport(from: Date, to: Date) {
+  const fromKey = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, "0")}`;
+  const toKey = `${to.getFullYear()}-${String(to.getMonth() + 1).padStart(2, "0")}`;
+
   const [users, projects, assignments, timeEntries, bonuses] = await Promise.all([
     prisma.user.findMany({ select: { id: true, name: true, hourlyRateDefault: true } }),
     prisma.project.findMany({ include: { client: { select: { name: true } } } }),
     prisma.assignment.findMany(),
     prisma.timeEntry.findMany({ where: { date: { gte: from, lte: to } }, select: { userId: true, projectId: true, date: true, hours: true, status: true } }),
-    prisma.bonus.findMany({ select: { userId: true, amount: true, type: true, month: true } }),
+    prisma.bonus.findMany({
+      where: {
+        month: { gte: fromKey, lte: toKey },
+      },
+      select: { userId: true, amount: true, type: true, month: true },
+    }),
   ]);
 
   return computePeriodReport({

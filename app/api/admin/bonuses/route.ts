@@ -31,6 +31,35 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PUT(req: Request) {
+  const auth = await requireRole(["ADMIN"]);
+  if (!auth.ok) return auth.response;
+
+  try {
+    const body = await req.json();
+    const id = String(body?.id ?? "");
+    if (!id) return badRequest("Brak id");
+
+    const parsed = bonusSchema.safeParse(body);
+    if (!parsed.success) return badRequest("Niepoprawne dane", { issues: parsed.error.issues });
+
+    const updated = await prisma.bonus.update({
+      where: { id },
+      data: {
+        userId: parsed.data.userId,
+        amount: parsed.data.amount as any,
+        type: parsed.data.type as any,
+        month: parsed.data.month ?? null,
+        note: parsed.data.note ?? null,
+      },
+    });
+    await audit(auth.user.id, "UPDATE", "Bonus", id, { userId: updated.userId, amount: updated.amount });
+    return ok(updated);
+  } catch (e: any) {
+    return serverError(e?.message ?? "Błąd");
+  }
+}
+
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;

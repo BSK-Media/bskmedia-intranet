@@ -78,10 +78,7 @@ export async function GET(req: Request) {
       prisma.bonus.findMany({
         where: {
           userId,
-          OR: [
-            { type: "MONTHLY", month: { startsWith: `${year}-` } },
-            { type: "ONE_OFF", createdAt: { gte: yearFrom, lte: yearTo } },
-          ],
+          month: { startsWith: `${year}-` },
         },
         select: { amount: true, type: true, month: true, createdAt: true },
       }),
@@ -142,7 +139,7 @@ export async function GET(req: Request) {
 
     // bonuses
     for (const b of bonuses) {
-      const k = b.type === "MONTHLY" ? String(b.month ?? "") : monthKey(b.createdAt);
+      const k = String(b.month ?? "");
       if (!k || !k.startsWith(`${year}-`)) continue;
       init(k).bonuses += Number(b.amount);
     }

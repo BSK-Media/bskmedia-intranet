@@ -83,8 +83,12 @@ function CreateEntry({ projects, onDone }: { projects: any[]; onDone: () => void
         <Label>Projekt</Label>
         <Select value={projectId} onValueChange={setProjectId}>
           <SelectTrigger><SelectValue placeholder="Wybierz" /></SelectTrigger>
-          <SelectContent>
-            {projects.map((p: any) => <SelectItem key={p.projectId} value={p.projectId}>{p.name}</SelectItem>)}
+          <SelectContent disablePortal>
+            {projects.map((p: any) => (
+              <SelectItem key={p.projectId} value={p.projectId}>
+                {p.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

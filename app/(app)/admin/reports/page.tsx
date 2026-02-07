@@ -38,12 +38,12 @@ export default function ReportsPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Top projekty</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Projekty</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <THead><TR><TH>Klient</TH><TH>Projekt</TH><TH>Przychód</TH><TH>Koszt</TH><TH>Marża</TH></TR></THead>
             <TBody>
-              {(data?.top?.projectsByRevenue ?? []).map((p: any) => (
+              {(data?.projects ?? []).slice().sort((a: any, b: any) => (b.revenue ?? 0) - (a.revenue ?? 0)).map((p: any) => (
                 <TR key={p.projectId}>
                   <TD>{p.clientName}</TD><TD>{p.name}</TD><TD>{p.revenue}</TD><TD>{p.cost}</TD><TD>{p.margin}</TD>
                 </TR>

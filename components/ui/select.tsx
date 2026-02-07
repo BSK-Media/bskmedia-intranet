@@ -28,22 +28,31 @@ export const SelectTrigger = React.forwardRef<
 ));
 SelectTrigger.displayName = "SelectTrigger";
 
-export function SelectContent({ className, ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>) {
-  return (
-    <SelectPrimitive.Portal>
-      <SelectPrimitive.Content
-        position="popper"
-        sideOffset={6}
-        className={cn(
-          "z-[1000] max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
-          className,
-        )}
-        {...props}
-      >
-        <SelectPrimitive.Viewport className="p-1" />
-      </SelectPrimitive.Content>
-    </SelectPrimitive.Portal>
+export function SelectContent(
+  {
+    className,
+    disablePortal,
+    ...props
+  }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { disablePortal?: boolean }
+) {
+  const content = (
+    <SelectPrimitive.Content
+      position="popper"
+      sideOffset={6}
+      className={cn(
+        "z-[1000] max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
+        className,
+      )}
+      {...props}
+    >
+      <SelectPrimitive.Viewport className="p-1" />
+    </SelectPrimitive.Content>
   );
+
+  // Radix Dialog ustawia `pointer-events: none` na <body> w trybie modal.
+  // Jeśli SelectContent jest w Portalu (czyli w <body>), to dropdown może być nieklikalny.
+  // Dla formularzy w dialogu użyj `disablePortal`.
+  return disablePortal ? content : <SelectPrimitive.Portal>{content}</SelectPrimitive.Portal>;
 }
 
 export const SelectItem = React.forwardRef<
