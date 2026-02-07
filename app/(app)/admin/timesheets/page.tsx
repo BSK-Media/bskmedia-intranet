@@ -27,6 +27,22 @@ export default function TimesheetsPage() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => review(row.original.id, "APPROVED")}>Approve</Button>
           <Button variant="outline" onClick={() => review(row.original.id, "REJECTED")}>Reject</Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const okConfirm = window.confirm("Usunąć ten wpis czasu pracy? Ta operacja jest nieodwracalna.");
+              if (!okConfirm) return;
+              const res = await fetch(`/api/admin/time-entries?id=${row.original.id}`, { method: "DELETE" });
+              if (!res.ok) {
+                toast.error("Nie udało się usunąć");
+                return;
+              }
+              toast.success("Usunięto");
+              mutate();
+            }}
+          >
+            Usuń
+          </Button>
         </div>
       ),
     },

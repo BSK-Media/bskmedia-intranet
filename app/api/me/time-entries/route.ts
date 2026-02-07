@@ -69,7 +69,8 @@ export async function DELETE(req: Request) {
     const te = await prisma.timeEntry.findUnique({ where: { id } });
     if (!te || te.userId !== userId) return badRequest("Nie znaleziono");
 
-    if (te.status !== "SUBMITTED") return badRequest("Nie można usunąć po akceptacji/odrzuceniu");
+    // Pozwalamy pracownikowi usunąć swój wpis nawet po akceptacji/odrzuceniu.
+    // (Admin również ma możliwość usuwania z poziomu panelu weryfikacji.)
 
     await prisma.timeEntry.delete({ where: { id } });
     await audit(userId, "DELETE", "TimeEntry", id);

@@ -33,6 +33,27 @@ export default function MyTimesheet() {
     },
     { header: "Status", accessorKey: "status" },
     { header: "Notatka", accessorKey: "note" },
+    {
+      header: "Akcje",
+      cell: ({ row }) => (
+        <Button
+          variant="outline"
+          onClick={async () => {
+            const okConfirm = window.confirm("Usunąć ten wpis czasu pracy?");
+            if (!okConfirm) return;
+            const res = await fetch(`/api/me/time-entries?id=${row.original.id}`, { method: "DELETE" });
+            if (!res.ok) {
+              toast.error("Nie udało się usunąć");
+              return;
+            }
+            toast.success("Usunięto");
+            mutate();
+          }}
+        >
+          Usuń
+        </Button>
+      ),
+    },
   ];
 
   return (
