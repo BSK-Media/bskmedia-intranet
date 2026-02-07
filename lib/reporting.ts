@@ -18,11 +18,26 @@ export async function buildReport(from: Date, to: Date) {
     }),
   ]);
 
+  // Hide projects that are not relevant for the selected period.
+  // - recurring: show only if contract overlaps the period (or no contractEnd)
+  // - one-off: show only in the month of its deadline (fallback: contractEnd/contractStart/createdAt)
+  const relevantProjects = projects.filter((p) => {
+    if (p.cadence === "ONE_OFF") {
+      const d = p.deadlineAt ?? p.contractEnd ?? p.contractStart ?? p.createdAt;
+      return d >= from && d <= to;
+    }
+    const start = p.contractStart ?? p.createdAt;
+    const end = p.contractEnd;
+    if (start > to) return false;
+    if (end && end < from) return false;
+    return true;
+  });
+
   return computePeriodReport({
     from,
     to,
     users: users.map((u) => ({ ...u, hourlyRateDefault: Number(u.hourlyRateDefault) })),
-    projects: projects.map((p) => ({
+    projects: relevantProjects.map((p) => ({
       id: p.id,
       name: p.name,
       clientName: p.client.name,

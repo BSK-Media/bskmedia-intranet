@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
@@ -81,16 +80,18 @@ function CreateEntry({ projects, onDone }: { projects: any[]; onDone: () => void
     <div className="space-y-4">
       <div className="space-y-1">
         <Label>Projekt</Label>
-        <Select value={projectId} onValueChange={setProjectId}>
-          <SelectTrigger><SelectValue placeholder="Wybierz" /></SelectTrigger>
-          <SelectContent disablePortal>
-            {projects.map((p: any) => (
-              <SelectItem key={p.projectId} value={p.projectId}>
-                {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select
+          className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+        >
+          <option value="">Wybierz</option>
+          {projects.map((p: any) => (
+            <option key={p.projectId} value={p.projectId}>
+              {p.client ? `${p.client} — ` : ""}{p.name}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1"><Label>Data</Label><Input value={date} onChange={(e) => setDate(e.target.value)} /></div>

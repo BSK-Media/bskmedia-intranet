@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { formatPLN } from "@/lib/labels";
 
@@ -57,7 +56,10 @@ export default function BonusesPage() {
     },
   ];
 
-  const employees = (users ?? []).filter((u) => u.role === "EMPLOYEE");
+  // Some existing databases may have workers mistakenly created with role=ADMIN.
+  // We primarily want to exclude real admins from receiving bonuses, but keep the UI usable.
+  const nonAdmins = (users ?? []).filter((u) => u.role !== "ADMIN");
+  const employees = nonAdmins.length ? nonAdmins : (users ?? []);
 
   return (
     <Card>
@@ -145,18 +147,18 @@ function BonusForm({
     <div className="space-y-4">
       <div className="space-y-1">
         <Label>Pracownik</Label>
-        <Select value={userId} onValueChange={setUserId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Wybierz" />
-          </SelectTrigger>
-          <SelectContent disablePortal>
-            {users.map((u) => (
-              <SelectItem key={u.id} value={u.id}>
-                {u.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select
+          className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+        >
+          <option value="">Wybierz</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name} ({u.email})
+            </option>
+          ))}
+        </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
