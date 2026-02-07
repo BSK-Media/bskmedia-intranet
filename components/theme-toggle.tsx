@@ -12,7 +12,10 @@ export function ThemeToggle() {
   return (
     <Button
       variant="outline"
-      size="icon"
+      // W tej wersji Button (shadcn) nie ma rozmiaru "icon",
+      // więc wymuszamy go klasami.
+      size="sm"
+      className="h-9 w-9 p-0"
       aria-label={isDark ? "Przełącz na jasny motyw" : "Przełącz na ciemny motyw"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
