@@ -42,7 +42,10 @@ export default function BonusesPage() {
               if (!confirm("Usunąć premię?")) return;
               const res = await fetch(`/api/admin/bonuses?id=${encodeURIComponent(row.original.id)}`, { method: "DELETE" });
               const payload = await res.json().catch(() => ({}));
-              if (!res.ok) return toast.error(payload?.message ?? "Nie udało się usunąć");
+              if (!res.ok) {
+                toast.error(payload?.message ?? "Nie udało się usunąć");
+                return;
+              }
               toast.success("Usunięto");
               await mutate();
             }}
@@ -77,7 +80,10 @@ export default function BonusesPage() {
                   body: JSON.stringify(payload),
                 });
                 const data = await res.json().catch(() => ({}));
-                if (!res.ok) return toast.error(data?.message ?? "Błąd zapisu");
+                if (!res.ok) {
+                  toast.error(data?.message ?? "Błąd zapisu");
+                  return;
+                }
                 toast.success("Dodano premię");
                 await mutate();
               }}
@@ -104,7 +110,10 @@ export default function BonusesPage() {
                     body: JSON.stringify({ ...payload, id: editing.id }),
                   });
                   const data = await res.json().catch(() => ({}));
-                  if (!res.ok) return toast.error(data?.message ?? "Błąd zapisu");
+                  if (!res.ok) {
+                    toast.error(data?.message ?? "Błąd zapisu");
+                    return;
+                  }
                   toast.success("Zapisano");
                   setEditing(null);
                   await mutate();
@@ -165,9 +174,18 @@ function BonusForm({
       </div>
       <Button
         onClick={async () => {
-          if (!userId) return toast.error("Wybierz pracownika");
-          if (!/^-?\d+(\.\d+)?$/.test(amount || "")) return toast.error("Podaj poprawną kwotę");
-          if (!/^\d{4}-\d{2}$/.test(month || "")) return toast.error("Miesiąc ma format YYYY-MM");
+          if (!userId) {
+            toast.error("Wybierz pracownika");
+            return;
+          }
+          if (!/^-?\d+(\.\d+)?$/.test(amount || "")) {
+            toast.error("Podaj poprawną kwotę");
+            return;
+          }
+          if (!/^\d{4}-\d{2}$/.test(month || "")) {
+            toast.error("Miesiąc ma format YYYY-MM");
+            return;
+          }
           await onSubmit({ userId, amount: Number(amount), type: "ONE_OFF", month, note: note || null });
         }}
         disabled={!userId}
