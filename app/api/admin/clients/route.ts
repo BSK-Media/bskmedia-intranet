@@ -4,9 +4,15 @@ import { clientSchema } from "@/lib/validators";
 import { ok, badRequest, serverError } from "@/lib/http";
 import { audit } from "@/lib/audit";
 
-export async function GET() {
+export async function GET(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
+  const url = new URL(req.url);
+  const clientId = url.searchParams.get("clientId");
+  if (clientId) {
+    const client = await prisma.client.findUnique({ where: { id: clientId } });
+    return ok(client);
+  }
   const clients = await prisma.client.findMany({ orderBy: { name: "asc" } });
   return ok(clients);
 }

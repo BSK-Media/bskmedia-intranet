@@ -4,7 +4,9 @@ import { projectSchema } from "@/lib/validators";
 import { ok, badRequest, serverError } from "@/lib/http";
 import { audit } from "@/lib/audit";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+type Ctx = { params: { id: string } };
+
+export async function PUT(req: Request, ctx: Ctx) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
 
@@ -12,18 +14,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const parsed = projectSchema.safeParse(await req.json());
     if (!parsed.success) return badRequest("Niepoprawne dane", { issues: parsed.error.issues });
 
-    const current = await prisma.project.findUnique({ where: { id: params.id } });
-    const doneNow = current?.status !== "DONE" && parsed.data.status === "DONE";
-    const completedAt = doneNow ? new Date() : current?.completedAt ?? null;
-
     const updated = await prisma.project.update({
-      where: { id: params.id },
+      where: { id: ctx.params.id },
       data: {
         ...parsed.data,
         monthlyRetainerAmount: parsed.data.monthlyRetainerAmount ?? null,
         fixedClientPrice: parsed.data.fixedClientPrice ?? null,
         hourlyClientRate: parsed.data.hourlyClientRate ?? null,
-        completedAt,
+        completedAt: parsed.data.status === "DONE" ? new Date() : null,
+        contractStart: parsed.data.contractStart ? new Date(parsed.data.contractStart) : new Date(),
+        contractEnd: parsed.data.contractEnd ? new Date(parsed.data.contractEnd) : null,
+        deadlineAt: parsed.data.deadlineAt ? new Date(parsed.data.deadlineAt) : null,
       } as any,
     });
 
@@ -34,13 +35,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, ctx: Ctx) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
 
   try {
-    await prisma.project.delete({ where: { id: params.id } });
-    await audit(auth.user.id, "DELETE", "Project", params.id);
+    const deleted = await prisma.project.delete({ where: { id: ctx.params.id } });
+    await audit(auth.user.id, "DELETE", "Project", deleted.id, { name: deleted.name });
     return ok({ ok: true });
   } catch (e: any) {
     return serverError(e?.message ?? "Błąd");

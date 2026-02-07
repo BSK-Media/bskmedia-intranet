@@ -22,7 +22,16 @@ export default function MyTimesheet() {
   const columns: ColumnDef<any, any>[] = [
     { header: "Data", cell: ({ row }) => row.original.date?.slice(0, 10) },
     { header: "Projekt", cell: ({ row }) => row.original.project?.name },
-    { header: "Godziny", cell: ({ row }) => Number(row.original.hours) },
+    {
+      header: "Czas",
+      cell: ({ row }) => {
+        const hrs = Number(row.original.hours || 0);
+        const totalMinutes = Math.round(hrs * 60);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        return `${h}:${m.toString().padStart(2, "0")}`;
+      },
+    },
     { header: "Status", accessorKey: "status" },
     { header: "Notatka", accessorKey: "note" },
   ];
@@ -51,13 +60,17 @@ function CreateEntry({ projects, onDone }: { projects: any[]; onDone: () => void
   const [projectId, setProjectId] = React.useState("");
   const [date, setDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [hours, setHours] = React.useState("1");
+  const [minutes, setMinutes] = React.useState("0");
   const [note, setNote] = React.useState("");
 
   async function submit() {
+    const h = Number(hours || 0);
+    const m = Number(minutes || 0);
+    const total = h + Math.min(Math.max(m, 0), 59) / 60;
     const res = await fetch("/api/me/time-entries", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ projectId, date, hours: Number(hours), note }),
+      body: JSON.stringify({ projectId, date, hours: total, note }),
     });
     if (!res.ok) return toast.error("Błąd");
     toast.success("Dodano");
@@ -77,7 +90,13 @@ function CreateEntry({ projects, onDone }: { projects: any[]; onDone: () => void
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1"><Label>Data</Label><Input value={date} onChange={(e) => setDate(e.target.value)} /></div>
-        <div className="space-y-1"><Label>Godziny</Label><Input value={hours} onChange={(e) => setHours(e.target.value)} /></div>
+        <div className="space-y-1">
+          <Label>Czas (h / min)</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Input value={hours} onChange={(e) => setHours(e.target.value)} placeholder="Godziny" />
+            <Input value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="Minuty" />
+          </div>
+        </div>
       </div>
       <div className="space-y-1"><Label>Notatka</Label><Input value={note} onChange={(e) => setNote(e.target.value)} /></div>
       <Button onClick={submit} disabled={!projectId}>Zapisz</Button>

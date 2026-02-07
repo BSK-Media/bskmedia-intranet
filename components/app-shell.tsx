@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/components/auth-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavItem = { href: string; label: string; icon: React.ReactNode };
 
@@ -95,19 +96,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 ) : null}
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" disabled={loading}>
-                    {(user?.name ?? user?.email ?? "Użytkownik").toString()}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={logout}>Wyloguj</DropdownMenuItem>
-                  {impersonating ? (
-                    <DropdownMenuItem onClick={stopImpersonation}>Zakończ podgląd</DropdownMenuItem>
-                  ) : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" disabled={loading}>
+                      {(user?.name ?? user?.email ?? "Użytkownik").toString()}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={logout}>Wyloguj</DropdownMenuItem>
+                    {impersonating ? (
+                      <DropdownMenuItem onClick={stopImpersonation}>Zakończ podgląd</DropdownMenuItem>
+                    ) : null}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </header>
 

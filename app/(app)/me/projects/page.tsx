@@ -13,7 +13,15 @@ export default function MyProjectsPage() {
   const columns: ColumnDef<any, any>[] = [
     { header: "Projekt", accessorKey: "name" },
     { header: "Klient", accessorKey: "client" },
-    { header: "Billing", accessorKey: "billingType" },
+    {
+      header: "Wynagrodzenie",
+      cell: ({ row }) => {
+        const a = row.original;
+        if (a.fixedPayoutAmount) return `Projektowe (${a.fixedPayoutAmount} zł)`;
+        if (a.hourlyRateOverride) return `Godzinowe (${a.hourlyRateOverride} zł/h)`;
+        return "Godzinowe (domyślna stawka)";
+      },
+    },
     { header: "Status", accessorKey: "status" },
   ];
 

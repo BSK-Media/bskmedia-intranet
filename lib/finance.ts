@@ -14,6 +14,10 @@ export type FinanceInput = {
     monthlyRetainerAmount?: number | null;
     fixedClientPrice?: number | null;
     completedAt?: Date | null;
+    contractStart?: Date | null;
+    contractEnd?: Date | null;
+    deadlineAt?: Date | null;
+    createdAt?: Date | null;
   }[];
   assignments: { userId: string; projectId: string; hourlyRateOverride?: number | null; fixedPayoutAmount?: number | null }[];
   timeEntries: { userId: string; projectId: string; date: Date; hours: number; status: TimeEntryStatus }[];
@@ -36,10 +40,27 @@ export type PeriodReport = {
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const inRange = (d: Date, from: Date, to: Date) => d.getTime() >= from.getTime() && d.getTime() <= to.getTime();
 
+function monthKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthRangeKey(from: Date, to: Date) {
+  return { from: monthKey(from), to: monthKey(to) };
+}
+
 function monthCount(from: Date, to: Date) {
   const a = new Date(from.getFullYear(), from.getMonth(), 1);
   const b = new Date(to.getFullYear(), to.getMonth(), 1);
   return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth()) + 1;
+}
+
+function overlapMonths(from: Date, to: Date, contractStart?: Date | null, contractEnd?: Date | null) {
+  const start = contractStart ? new Date(contractStart) : new Date(from);
+  const end = contractEnd ? new Date(contractEnd) : new Date(to);
+  const a = start.getTime() > from.getTime() ? start : from;
+  const b = end.getTime() < to.getTime() ? end : to;
+  if (b.getTime() < a.getTime()) return 0;
+  return monthCount(a, b);
 }
 
 export function computePeriodReport(input: FinanceInput): PeriodReport {
@@ -73,17 +94,18 @@ export function computePeriodReport(input: FinanceInput): PeriodReport {
   const projectFixedCost = new Map<string, number>();
   for (const a of input.assignments) {
     const p = projectById.get(a.projectId);
-    if (!p || p.billingType !== "FIXED") continue;
+    if (!p) continue;
     const fixed = Number(a.fixedPayoutAmount ?? 0);
     if (!fixed) continue;
 
     if (p.cadence === "ONE_OFF") {
-      if (p.completedAt && inRange(p.completedAt, from, to)) {
+      const paidAt = (p.deadlineAt ?? p.createdAt ?? p.completedAt) ?? null;
+      if (paidAt && inRange(paidAt, from, to)) {
         employeeFixed.set(a.userId, (employeeFixed.get(a.userId) ?? 0) + fixed);
         projectFixedCost.set(p.id, (projectFixedCost.get(p.id) ?? 0) + fixed);
       }
     } else {
-      const months = monthCount(from, to);
+      const months = overlapMonths(from, to, p.contractStart ?? null, p.contractEnd ?? null);
       employeeFixed.set(a.userId, (employeeFixed.get(a.userId) ?? 0) + fixed * months);
       projectFixedCost.set(p.id, (projectFixedCost.get(p.id) ?? 0) + fixed * months);
     }
@@ -99,15 +121,16 @@ export function computePeriodReport(input: FinanceInput): PeriodReport {
   const projectRevenue = new Map<string, number>();
   for (const p of input.projects) {
     if (p.billingType === "MONTHLY_RETAINER") {
-      const months = monthCount(from, to);
+      const months = overlapMonths(from, to, p.contractStart ?? null, p.contractEnd ?? null);
       projectRevenue.set(p.id, Number(p.monthlyRetainerAmount ?? 0) * months);
       continue;
     }
     if (p.billingType === "FIXED") {
       if (p.cadence === "ONE_OFF") {
-        projectRevenue.set(p.id, p.completedAt && inRange(p.completedAt, from, to) ? Number(p.fixedClientPrice ?? 0) : 0);
+        const paidAt = (p.deadlineAt ?? p.createdAt ?? p.completedAt) ?? null;
+        projectRevenue.set(p.id, paidAt && inRange(paidAt, from, to) ? Number(p.fixedClientPrice ?? 0) : 0);
       } else {
-        const months = monthCount(from, to);
+        const months = overlapMonths(from, to, p.contractStart ?? null, p.contractEnd ?? null);
         projectRevenue.set(p.id, Number(p.fixedClientPrice ?? 0) * months);
       }
       continue;

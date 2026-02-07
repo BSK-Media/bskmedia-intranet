@@ -24,6 +24,10 @@ export async function buildReport(from: Date, to: Date) {
       monthlyRetainerAmount: p.monthlyRetainerAmount ? Number(p.monthlyRetainerAmount) : null,
       fixedClientPrice: p.fixedClientPrice ? Number(p.fixedClientPrice) : null,
       completedAt: p.completedAt,
+      contractStart: p.contractStart,
+      contractEnd: p.contractEnd,
+      deadlineAt: p.deadlineAt,
+      createdAt: p.createdAt,
     })),
     assignments: assignments.map((a) => ({
       userId: a.userId,

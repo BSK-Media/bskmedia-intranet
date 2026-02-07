@@ -124,6 +124,13 @@ model Project {
   // Set when project becomes DONE
   completedAt DateTime?
 
+  // Okres kontraktu (dla projektów cyklicznych)
+  contractStart DateTime @default(now())
+  contractEnd   DateTime?
+
+  // Deadline projektu (ważne dla rozliczeń jednorazowych)
+  deadlineAt    DateTime?
+
   assignments Assignment[]
   timeEntries  TimeEntry[]
 

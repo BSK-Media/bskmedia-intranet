@@ -18,6 +18,9 @@ export const projectSchema = z.object({
   monthlyRetainerAmount: z.coerce.number().optional().nullable(),
   fixedClientPrice: z.coerce.number().optional().nullable(),
   hourlyClientRate: z.coerce.number().optional().nullable(),
+  contractStart: z.string().optional().nullable(),
+  contractEnd: z.string().optional().nullable(),
+  deadlineAt: z.string().optional().nullable(),
 });
 
 export const userSchema = z.object({
