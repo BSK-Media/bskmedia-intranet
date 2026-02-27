@@ -90,7 +90,9 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
 
   const cost = hourlyPayout + fixedPayout + bonus;
   const margin = revenue - cost;
-  const efficiencyPerHour = hoursApproved > 0 ? margin / hoursApproved : 0;
+
+  // Efektywność/h w widoku pracownika: realne wynagrodzenie za 1h (nie marża).
+  const efficiencyPerHour = hoursApproved > 0 ? (hourlyPayout + fixedPayout + bonus) / hoursApproved : 0;
 
   return ok({
     month,

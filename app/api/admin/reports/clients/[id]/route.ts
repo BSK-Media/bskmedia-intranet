@@ -80,7 +80,8 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
       },
       { revenue: 0, cost: 0, margin: 0, hours: 0 }
     );
-    const efficiencyPerHour = totals.hours > 0 ? totals.margin / totals.hours : 0;
+    // Efektywność/h: koszt 1h pracy (payout / hours), nie marża/h.
+    const efficiencyPerHour = totals.hours > 0 ? totals.payout / totals.hours : 0;
 
     const approved = timeEntries.filter((t) => t.status === "APPROVED");
 
@@ -168,7 +169,7 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
     }
 
     for (const e of byEmployee.values()) {
-      e.efficiencyPerHour = e.hours > 0 ? e.margin / e.hours : 0;
+      e.efficiencyPerHour = e.hours > 0 ? e.payout / e.hours : 0;
     }
 
     // Reviewer breakdown (who approved)

@@ -95,7 +95,11 @@ export async function GET() {
 
       const cost = hourlyPayout + fixedPayout + bonus;
       const margin = revenue - cost;
-      const efficiencyPerHour = hrs > 0 ? margin / hrs : 0;
+
+      // Efektywność/h w widoku pracownika: realne wynagrodzenie za 1h (nie marża).
+      // Dla wynagrodzenia projektowego godziny są informacyjne, ale możemy pokazać
+      // „ile wychodzi na godzinę” jako (wynagrodzenie + premia) / godziny.
+      const efficiencyPerHour = hrs > 0 ? (hourlyPayout + fixedPayout + bonus) / hrs : 0;
 
       return {
         projectId: a.projectId,

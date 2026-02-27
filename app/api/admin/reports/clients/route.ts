@@ -36,7 +36,8 @@ export async function GET(req: Request) {
         cost: Math.round(c.cost * 100) / 100,
         margin: Math.round(c.margin * 100) / 100,
         hours: Math.round(c.hours * 100) / 100,
-        efficiencyPerHour: c.hours > 0 ? Math.round(((c.margin / c.hours) * 100)) / 100 : 0,
+        // Efektywność/h w panelu: koszt 1h pracy (nie marża/h).
+        efficiencyPerHour: c.hours > 0 ? Math.round(((c.cost / c.hours) * 100)) / 100 : 0,
       }))
       .sort((a, b) => (b.revenue ?? 0) - (a.revenue ?? 0));
 
