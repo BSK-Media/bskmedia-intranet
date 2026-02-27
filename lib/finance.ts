@@ -7,6 +7,7 @@ export type FinanceInput = {
   projects: {
     id: string;
     name: string;
+    clientId?: string;
     clientName: string;
     billingType: BillingType;
     cadence: Cadence;
@@ -21,7 +22,7 @@ export type FinanceInput = {
   }[];
   assignments: { userId: string; projectId: string; hourlyRateOverride?: number | null; fixedPayoutAmount?: number | null }[];
   timeEntries: { userId: string; projectId: string; date: Date; hours: number; status: TimeEntryStatus }[];
-  bonuses: { userId: string; amount: number; type: "ONE_OFF" | "MONTHLY"; month?: string | null }[];
+  bonuses: { userId: string; projectId?: string | null; amount: number; type: "ONE_OFF" | "MONTHLY"; month?: string | null; note?: string | null }[];
 };
 
 export type PeriodReport = {
@@ -29,9 +30,9 @@ export type PeriodReport = {
   to: string;
   kpi: { revenue: number; cost: number; margin: number; hours: number; activeProjects: number };
   employees: { userId: string; name: string; hours: number; hourlyPayout: number; fixedPayout: number; bonuses: number; total: number }[];
-  projects: { projectId: string; name: string; clientName: string; revenue: number; cost: number; margin: number; hours: number }[];
+  projects: { projectId: string; name: string; clientId?: string; clientName: string; revenue: number; cost: number; margin: number; hours: number; bonuses: number }[];
   top: {
-    projectsByRevenue: { projectId: string; name: string; clientName: string; revenue: number; cost: number; margin: number; hours: number }[];
+    projectsByRevenue: { projectId: string; name: string; clientId?: string; clientName: string; revenue: number; cost: number; margin: number; hours: number; bonuses: number }[];
     clientsByRevenue: { clientName: string; revenue: number }[];
     employeesByPayout: { userId: string; name: string; hours: number; hourlyPayout: number; fixedPayout: number; bonuses: number; total: number }[];
   };
@@ -113,8 +114,13 @@ export function computePeriodReport(input: FinanceInput): PeriodReport {
 
   // bonuses (overhead on employee)
   const bonusSum = new Map<string, number>();
+  const bonusByProject = new Map<string, number>();
+  const overheadBonusTotalByEmployee = new Map<string, number>();
+
   for (const b of input.bonuses) {
     bonusSum.set(b.userId, (bonusSum.get(b.userId) ?? 0) + b.amount);
+    if (b.projectId) bonusByProject.set(b.projectId, (bonusByProject.get(b.projectId) ?? 0) + b.amount);
+    else overheadBonusTotalByEmployee.set(b.userId, (overheadBonusTotalByEmployee.get(b.userId) ?? 0) + b.amount);
   }
 
   // revenue by project
@@ -144,9 +150,10 @@ export function computePeriodReport(input: FinanceInput): PeriodReport {
 
   const projects = input.projects.map((p) => {
     const rev = projectRevenue.get(p.id) ?? 0;
-    const cost = (projectHourlyCost.get(p.id) ?? 0) + (projectFixedCost.get(p.id) ?? 0);
+    const bonuses = bonusByProject.get(p.id) ?? 0;
+    const cost = (projectHourlyCost.get(p.id) ?? 0) + (projectFixedCost.get(p.id) ?? 0) + bonuses;
     const hrs = projectHours.get(p.id) ?? 0;
-    return { projectId: p.id, name: p.name, clientName: p.clientName, revenue: round2(rev), cost: round2(cost), margin: round2(rev - cost), hours: round2(hrs) };
+    return { projectId: p.id, name: p.name, clientId: p.clientId, clientName: p.clientName, revenue: round2(rev), cost: round2(cost), margin: round2(rev - cost), hours: round2(hrs), bonuses: round2(bonuses) };
   });
 
   const employees = input.users.map((u) => {
@@ -160,8 +167,9 @@ export function computePeriodReport(input: FinanceInput): PeriodReport {
 
   const revenueTotal = projects.reduce((a, p) => a + p.revenue, 0);
   const projectCostTotal = projects.reduce((a, p) => a + p.cost, 0);
-  const bonusTotal = employees.reduce((a, e) => a + e.bonuses, 0);
-  const costTotal = projectCostTotal + bonusTotal;
+  // For older bonuses that are not attached to projects (projectId=null) we still treat them as overhead.
+  const overheadBonusTotal = [...overheadBonusTotalByEmployee.values()].reduce((a, b) => a + b, 0);
+  const costTotal = projectCostTotal + overheadBonusTotal;
   const hoursTotal = employees.reduce((a, e) => a + e.hours, 0);
 
   const byClient = new Map<string, number>();

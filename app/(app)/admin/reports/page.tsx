@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import Link from "next/link";
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
 
@@ -24,6 +25,12 @@ export default function ReportsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Button size="sm" variant="default">Podsumowanie</Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/admin/reports/clients?month=${month}`}>Klienci</Link>
+            </Button>
+          </div>
           {isLoading || !data?.kpi ? (
             <div className="text-zinc-500">Ładowanie…</div>
           ) : (

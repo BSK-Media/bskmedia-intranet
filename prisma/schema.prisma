@@ -195,12 +195,18 @@ model Bonus {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Optional: bonus can be assigned to a specific project.
+  // Keeping it nullable to preserve backward compatibility with older data.
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   amount    Int
   type      BonusType
   month     String?
   note      String?
 
   @@index([userId])
+  @@index([projectId])
   @@index([type, month])
 }
 

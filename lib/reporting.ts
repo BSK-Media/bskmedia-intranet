@@ -14,7 +14,7 @@ export async function buildReport(from: Date, to: Date) {
       where: {
         month: { gte: fromKey, lte: toKey },
       },
-      select: { userId: true, amount: true, type: true, month: true },
+      select: { userId: true, projectId: true, amount: true, type: true, month: true, note: true },
     }),
   ]);
 
@@ -40,6 +40,7 @@ export async function buildReport(from: Date, to: Date) {
     projects: relevantProjects.map((p) => ({
       id: p.id,
       name: p.name,
+      clientId: p.clientId,
       clientName: p.client.name,
       billingType: p.billingType,
       cadence: p.cadence,

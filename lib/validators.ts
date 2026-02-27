@@ -48,6 +48,7 @@ export const timeEntryCreateSchema = z.object({
 
 export const bonusSchema = z.object({
   userId: z.string().min(1),
+  projectId: z.string().optional().nullable(),
   amount: z.coerce.number().min(0),
   type: z.enum(["ONE_OFF", "MONTHLY"]),
   month: z.string().optional().nullable(),

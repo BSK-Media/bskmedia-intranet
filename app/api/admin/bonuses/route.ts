@@ -9,7 +9,10 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   const items = await prisma.bonus.findMany({
-    include: { user: { select: { name: true, email: true } } },
+    include: {
+      user: { select: { name: true, email: true } },
+      project: { select: { id: true, name: true, client: { select: { name: true } } } },
+    },
     orderBy: { createdAt: "desc" },
   });
   return ok(items);
@@ -23,7 +26,14 @@ export async function POST(req: Request) {
     const parsed = bonusSchema.safeParse(await req.json());
     if (!parsed.success) return badRequest("Niepoprawne dane", { issues: parsed.error.issues });
 
-    const created = await prisma.bonus.create({ data: { ...parsed.data, month: parsed.data.month ?? null, note: parsed.data.note ?? null } as any });
+    const created = await prisma.bonus.create({
+      data: {
+        ...parsed.data,
+        projectId: parsed.data.projectId ?? null,
+        month: parsed.data.month ?? null,
+        note: parsed.data.note ?? null,
+      } as any,
+    });
     await audit(auth.user.id, "CREATE", "Bonus", created.id, { userId: created.userId, amount: created.amount });
     return ok(created, { status: 201 });
   } catch (e: any) {
@@ -47,6 +57,7 @@ export async function PUT(req: Request) {
       where: { id },
       data: {
         userId: parsed.data.userId,
+        projectId: parsed.data.projectId ?? null,
         amount: parsed.data.amount as any,
         type: parsed.data.type as any,
         month: parsed.data.month ?? null,

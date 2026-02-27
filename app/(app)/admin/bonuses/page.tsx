@@ -15,15 +15,36 @@ import { formatPLN } from "@/lib/labels";
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
 
 type User = { id: string; name: string; email: string; role: "ADMIN" | "EMPLOYEE" };
-type Bonus = { id: string; userId: string; amount: number; type: "ONE_OFF" | "MONTHLY"; month: string | null; note: string | null; user?: { name: string; email: string } };
+type Assignment = { userId: string; projectId: string; project?: { name: string; client?: { name: string } } };
+type Bonus = {
+  id: string;
+  userId: string;
+  projectId: string | null;
+  amount: number;
+  type: "ONE_OFF" | "MONTHLY";
+  month: string | null;
+  note: string | null;
+  user?: { name: string; email: string };
+  project?: { id: string; name: string; client?: { name: string } };
+};
 
 export default function BonusesPage() {
   const { data, mutate } = useSWR<Bonus[]>("/api/admin/bonuses", fetcher);
   const { data: users } = useSWR<User[]>("/api/admin/users", fetcher);
+  const { data: assignments } = useSWR<Assignment[]>("/api/admin/assignments", fetcher);
   const [editing, setEditing] = React.useState<Bonus | null>(null);
 
   const columns: ColumnDef<Bonus, any>[] = [
     { header: "Pracownik", cell: ({ row }) => row.original.user?.name ?? "" },
+    {
+      header: "Projekt",
+      cell: ({ row }) => {
+        const p = row.original.project;
+        if (!p) return row.original.projectId ? "(usuniety)" : "—";
+        const client = (p as any)?.client?.name;
+        return client ? `${client} — ${p.name}` : p.name;
+      },
+    },
     { header: "Kwota", cell: ({ row }) => formatPLN(Number(row.original.amount ?? 0)) },
     { header: "Miesiąc", accessorKey: "month" },
     { header: "Za co", accessorKey: "note" },
@@ -75,6 +96,7 @@ export default function BonusesPage() {
             </DialogHeader>
             <BonusForm
               users={employees}
+              assignments={assignments ?? []}
               onSubmit={async (payload) => {
                 const res = await fetch("/api/admin/bonuses", {
                   method: "POST",
@@ -104,6 +126,7 @@ export default function BonusesPage() {
             {editing ? (
               <BonusForm
                 users={employees}
+                assignments={assignments ?? []}
                 initial={editing}
                 onSubmit={async (payload) => {
                   const res = await fetch("/api/admin/bonuses", {
@@ -131,17 +154,36 @@ export default function BonusesPage() {
 
 function BonusForm({
   users,
+  assignments,
   initial,
   onSubmit,
 }: {
   users: User[];
+  assignments: Assignment[];
   initial?: Partial<Bonus>;
   onSubmit: (payload: any) => Promise<void>;
 }) {
   const [userId, setUserId] = React.useState(initial?.userId ?? "");
+  const [projectId, setProjectId] = React.useState(initial?.projectId ?? "");
   const [amount, setAmount] = React.useState(String(initial?.amount ?? ""));
   const [month, setMonth] = React.useState(initial?.month ?? new Date().toISOString().slice(0, 7));
   const [note, setNote] = React.useState(initial?.note ?? "");
+
+  const availableProjects = React.useMemo(() => {
+    if (!userId) return [];
+    return (assignments ?? [])
+      .filter((a) => a.userId === userId)
+      .map((a) => ({
+        projectId: a.projectId,
+        label: a.project?.client?.name ? `${a.project.client.name} — ${a.project.name}` : a.project?.name ?? a.projectId,
+      }));
+  }, [assignments, userId]);
+
+  React.useEffect(() => {
+    // Reset project when changing employee.
+    setProjectId(initial?.userId === userId ? (initial?.projectId ?? "") : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   return (
     <div className="space-y-4">
@@ -159,6 +201,24 @@ function BonusForm({
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="space-y-1">
+        <Label>Projekt (przypisany do pracownika)</Label>
+        <select
+          className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+          disabled={!userId}
+        >
+          <option value="">Wybierz</option>
+          {availableProjects.map((p) => (
+            <option key={p.projectId} value={p.projectId}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        {userId && availableProjects.length === 0 ? <div className="text-xs text-zinc-500">Ten pracownik nie ma przypisanych projektów.</div> : null}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
@@ -180,6 +240,10 @@ function BonusForm({
             toast.error("Wybierz pracownika");
             return;
           }
+          if (!projectId) {
+            toast.error("Wybierz projekt");
+            return;
+          }
           if (!/^-?\d+(\.\d+)?$/.test(amount || "")) {
             toast.error("Podaj poprawną kwotę");
             return;
@@ -188,9 +252,9 @@ function BonusForm({
             toast.error("Miesiąc ma format YYYY-MM");
             return;
           }
-          await onSubmit({ userId, amount: Number(amount), type: "ONE_OFF", month, note: note || null });
+          await onSubmit({ userId, projectId, amount: Number(amount), type: "ONE_OFF", month, note: note || null });
         }}
-        disabled={!userId}
+        disabled={!userId || !projectId}
       >
         Zapisz
       </Button>
