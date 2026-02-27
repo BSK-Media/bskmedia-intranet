@@ -102,7 +102,8 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
         revenue: 0,
         margin: 0,
         efficiencyPerHour: 0,
-        notes: [],
+        // TS: without an explicit type, [] can become never[] in this nullish-coalescing literal
+        notes: [] as string[],
       };
       prev.hours += hours;
       prev.payout += payout;
