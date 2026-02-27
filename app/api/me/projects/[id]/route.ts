@@ -49,10 +49,11 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
   const p = assignment.project;
   const hourlyDefault = Number(user?.hourlyRateDefault ?? 0);
   const rate = Number(assignment.hourlyRateOverride ?? hourlyDefault ?? 0);
+  const isProjectPaid = Number(assignment.fixedPayoutAmount ?? 0) > 0;
 
   const approved = timeEntries.filter((t) => t.status === "APPROVED");
   const hoursApproved = approved.reduce((a, t) => a + Number(t.hours), 0);
-  const hourlyPayout = hoursApproved * rate;
+  const hourlyPayout = isProjectPaid ? 0 : hoursApproved * rate;
 
   // Fixed payout for month
   let fixedPayout = 0;
@@ -83,7 +84,8 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
     }
   } else {
     const clientRate = Number(p.hourlyClientRate ?? 0);
-    revenue = clientRate > 0 ? hoursApproved * clientRate : hourlyPayout * 1.3;
+    // If client rate is not set, approximate revenue from hours.
+    revenue = clientRate > 0 ? hoursApproved * clientRate : (hoursApproved * rate) * 1.3;
   }
 
   const cost = hourlyPayout + fixedPayout + bonus;

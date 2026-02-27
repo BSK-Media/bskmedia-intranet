@@ -54,7 +54,8 @@ export async function GET() {
       const p = a.project;
       const hrs = hoursByProject.get(a.projectId) ?? 0;
       const rate = Number(a.hourlyRateOverride ?? hourlyDefault ?? 0);
-      const hourlyPayout = hrs * rate;
+      const isProjectPaid = Number(a.fixedPayoutAmount ?? 0) > 0;
+      const hourlyPayout = isProjectPaid ? 0 : hrs * rate;
 
       // Fixed payout allocation for this month
       let fixedPayout = 0;
@@ -87,7 +88,9 @@ export async function GET() {
       } else {
         // HOURLY
         const clientRate = Number(p.hourlyClientRate ?? 0);
-        revenue = clientRate > 0 ? hrs * clientRate : hourlyPayout * 1.3;
+        // If client rate is not set, approximate revenue from hours.
+        // (Do not base it on employee payout, because project-paid assignments have hourlyPayout=0.)
+        revenue = clientRate > 0 ? hrs * clientRate : (hrs * rate) * 1.3;
       }
 
       const cost = hourlyPayout + fixedPayout + bonus;

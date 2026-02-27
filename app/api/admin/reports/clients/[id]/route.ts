@@ -46,7 +46,24 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
         orderBy: [{ createdAt: "asc" }],
       }),
       prisma.user.findMany({ select: { id: true, name: true, hourlyRateDefault: true } }),
-      prisma.assignment.findMany({ where: { project: { clientId } }, select: { userId: true, projectId: true, hourlyRateOverride: true } }),
+      prisma.assignment.findMany({
+        where: { project: { clientId } },
+        select: {
+          userId: true,
+          projectId: true,
+          hourlyRateOverride: true,
+          fixedPayoutAmount: true,
+          project: {
+            select: {
+              cadence: true,
+              deadlineAt: true,
+              createdAt: true,
+              contractStart: true,
+              contractEnd: true,
+            },
+          },
+        },
+      }),
     ]);
 
     if (!client) return badRequest("Nie znaleziono klienta");
@@ -87,11 +104,13 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
 
     for (const t of approved) {
       const u = userById.get(t.userId);
-      const rate = Number(assignmentByKey.get(aKey(t.userId, t.projectId))?.hourlyRateOverride ?? u?.hourlyRateDefault ?? 0);
+      const a = assignmentByKey.get(aKey(t.userId, t.projectId));
+      const isProjectPaid = Number(a?.fixedPayoutAmount ?? 0) > 0;
+      const rate = Number(a?.hourlyRateOverride ?? u?.hourlyRateDefault ?? 0);
       const revPerHour = revPerHourByProject.get(t.projectId) ?? 0;
       const hours = Number(t.hours);
       const revenue = hours * revPerHour;
-      const payout = hours * rate;
+      const payout = isProjectPaid ? 0 : hours * rate;
       const margin = revenue - payout;
 
       const prev = byEmployee.get(t.userId) ?? {
@@ -111,6 +130,41 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
       prev.margin += margin;
       if (t.note) prev.notes.push(t.note);
       byEmployee.set(t.userId, prev);
+    }
+
+    // Add fixed (project-paid) payouts to employee breakdown.
+    // Hours remain tracked, but hourly payout is zero for these assignments.
+    const inRange = (d: Date) => d.getTime() >= from.getTime() && d.getTime() <= to.getTime();
+    for (const a of assignments as any[]) {
+      const fixed = Number(a.fixedPayoutAmount ?? 0);
+      if (!fixed) continue;
+
+      let fixedPayout = 0;
+      const p = a.project;
+      if (p?.cadence === "ONE_OFF") {
+        const paidAt = (p.deadlineAt ?? p.createdAt) as Date | null;
+        if (paidAt && inRange(paidAt)) fixedPayout = fixed;
+      } else {
+        const start = (p?.contractStart ?? p?.createdAt) as Date;
+        const end = (p?.contractEnd ?? null) as Date | null;
+        if (!(start > to) && !(end && end < from)) fixedPayout = fixed;
+      }
+
+      if (!fixedPayout) continue;
+
+      const prev = byEmployee.get(a.userId) ?? {
+        userId: a.userId,
+        name: userById.get(a.userId)?.name ?? "",
+        hours: 0,
+        payout: 0,
+        revenue: 0,
+        margin: 0,
+        efficiencyPerHour: 0,
+        notes: [] as string[],
+      };
+      prev.payout += fixedPayout;
+      prev.margin -= fixedPayout;
+      byEmployee.set(a.userId, prev);
     }
 
     for (const e of byEmployee.values()) {

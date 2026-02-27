@@ -20,6 +20,7 @@ export default function MyProjectsPage() {
     { header: "Efektywność/h", accessorKey: "efficiencyPerHour" },
     { header: "Premia", accessorKey: "bonus" },
     {
+      id: "payType",
       header: "Wynagrodzenie",
       cell: ({ row }) => {
         const a = row.original;
@@ -31,6 +32,7 @@ export default function MyProjectsPage() {
     { header: "Wynagrodzenie (miesiąc)", accessorKey: "payout" },
     { header: "Status", accessorKey: "status" },
     {
+      id: "actions",
       header: "",
       cell: ({ row }) => (
         <Link

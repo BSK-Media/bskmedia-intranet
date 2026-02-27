@@ -83,11 +83,17 @@ export function computePeriodReport(input: FinanceInput): PeriodReport {
     const p = projectById.get(t.projectId);
     if (!u || !p) continue;
     const a = assignmentByKey.get(aKey(u.id, p.id));
+    const isProjectPaid = Number(a?.fixedPayoutAmount ?? 0) > 0;
     const rate = Number(a?.hourlyRateOverride ?? u.hourlyRateDefault ?? 0);
     projectHours.set(p.id, (projectHours.get(p.id) ?? 0) + t.hours);
-    projectHourlyCost.set(p.id, (projectHourlyCost.get(p.id) ?? 0) + t.hours * rate);
     employeeHours.set(u.id, (employeeHours.get(u.id) ?? 0) + t.hours);
-    employeeHourly.set(u.id, (employeeHourly.get(u.id) ?? 0) + t.hours * rate);
+
+    // If a user is paid per-project (fixedPayoutAmount), their logged hours are for tracking only
+    // and MUST NOT generate hourly cost/payout.
+    if (!isProjectPaid) {
+      projectHourlyCost.set(p.id, (projectHourlyCost.get(p.id) ?? 0) + t.hours * rate);
+      employeeHourly.set(u.id, (employeeHourly.get(u.id) ?? 0) + t.hours * rate);
+    }
   }
 
   // fixed payouts
