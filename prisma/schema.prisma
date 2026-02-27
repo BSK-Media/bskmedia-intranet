@@ -133,6 +133,7 @@ model Project {
 
   assignments Assignment[]
   timeEntries  TimeEntry[]
+  bonuses      Bonus[]
 
   @@index([clientId])
   @@index([status])
