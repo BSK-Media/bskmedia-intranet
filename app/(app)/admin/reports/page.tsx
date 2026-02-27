@@ -27,9 +27,12 @@ export default function ReportsPage() {
         <CardContent>
           <div className="mb-4 flex flex-wrap gap-2">
             <Button size="sm" variant="default">Podsumowanie</Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/admin/reports/clients?month=${month}`}>Klienci</Link>
-            </Button>
+            <Link
+              href={`/admin/reports/clients?month=${month}`}
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-zinc-200 px-3 text-sm font-medium transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+            >
+              Klienci
+            </Link>
           </div>
           {isLoading || !data?.kpi ? (
             <div className="text-zinc-500">Ładowanie…</div>

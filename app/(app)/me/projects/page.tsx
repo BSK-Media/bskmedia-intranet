@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
 
@@ -34,9 +33,12 @@ export default function MyProjectsPage() {
     {
       header: "",
       cell: ({ row }) => (
-        <Button asChild size="sm" variant="outline">
-          <Link href={`/me/projects/${row.original.projectId}`}>Szczegóły</Link>
-        </Button>
+        <Link
+          href={`/me/projects/${row.original.projectId}`}
+          className="inline-flex h-9 items-center justify-center rounded-xl border border-zinc-200 px-3 text-sm font-medium transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+        >
+          Szczegóły
+        </Link>
       ),
     },
   ];

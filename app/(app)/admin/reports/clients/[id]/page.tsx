@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
 
@@ -21,12 +21,22 @@ export default function ClientReportDetailPage({ params }: { params: { id: strin
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{isLoading ? "Klient…" : `Klient: ${data?.client?.name ?? ""}`}</CardTitle>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline">
-              <Link href={`/admin/reports/clients?month=${month}`}>← Lista klientów</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href={`/admin/reports?month=${month}`}>Podsumowanie</Link>
-            </Button>
+            <Link
+              href={`/admin/reports/clients?month=${month}`}
+              className={cn(
+                "inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 px-4 text-sm font-medium transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+              )}
+            >
+              ← Lista klientów
+            </Link>
+            <Link
+              href={`/admin/reports?month=${month}`}
+              className={cn(
+                "inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 px-4 text-sm font-medium transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+              )}
+            >
+              Podsumowanie
+            </Link>
           </div>
         </CardHeader>
         <CardContent>

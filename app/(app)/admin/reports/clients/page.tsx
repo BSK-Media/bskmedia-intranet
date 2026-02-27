@@ -5,7 +5,6 @@ import useSWR from "swr";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
@@ -50,9 +49,12 @@ export default function ReportsClientsPage() {
                     <TD>{c.hours}</TD>
                     <TD>{c.efficiencyPerHour}</TD>
                     <TD className="text-right">
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={`/admin/reports/clients/${c.clientId}?month=${month}`}>Szczegóły</Link>
-                      </Button>
+                      <Link
+                        href={`/admin/reports/clients/${c.clientId}?month=${month}`}
+                        className="inline-flex h-9 items-center justify-center rounded-xl border border-zinc-200 px-3 text-sm font-medium transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+                      >
+                        Szczegóły
+                      </Link>
                     </TD>
                   </TR>
                 ))}

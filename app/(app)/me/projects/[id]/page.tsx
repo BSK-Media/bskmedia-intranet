@@ -5,7 +5,6 @@ import useSWR from "swr";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
@@ -20,9 +19,12 @@ export default function MyProjectDetailPage({ params }: { params: { id: string }
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{isLoading ? "Projekt…" : `${data?.project?.client ?? ""} — ${data?.project?.name ?? ""}`}</CardTitle>
-          <Button asChild variant="outline">
-            <Link href="/me/projects">← Moje projekty</Link>
-          </Button>
+          <Link
+            href="/me/projects"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 px-4 text-sm font-medium transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+          >
+            ← Moje projekty
+          </Link>
         </CardHeader>
         <CardContent>
           {isLoading ? (
