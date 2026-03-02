@@ -16,7 +16,8 @@ const fetcher = (u: string) => fetch(u).then((r) => r.json());
 export default function MyTimesheet() {
   const [month, setMonth] = React.useState(new Date().toISOString().slice(0, 7));
   const { data, mutate } = useSWR(`/api/me/time-entries?month=${month}`, fetcher);
-  const { data: projects } = useSWR("/api/me/projects", fetcher);
+  const { data: projectsData } = useSWR("/api/me/projects", fetcher);
+  const projects = Array.isArray(projectsData?.projects) ? projectsData.projects : [];
 
   const columns: ColumnDef<any, any>[] = [
     { header: "Data", cell: ({ row }) => row.original.date?.slice(0, 10) },
@@ -66,12 +67,12 @@ export default function MyTimesheet() {
             <DialogTrigger asChild><Button>Dodaj wpis</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Nowy wpis</DialogTitle></DialogHeader>
-              <CreateEntry projects={projects ?? []} onDone={() => mutate()} />
+              <CreateEntry projects={projects} onDone={() => mutate()} />
             </DialogContent>
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent><DataTable data={data ?? []} columns={columns} /></CardContent>
+      <CardContent><DataTable data={Array.isArray(data) ? data : []} columns={columns} /></CardContent>
     </Card>
   );
 }
