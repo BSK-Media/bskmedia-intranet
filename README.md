@@ -14,11 +14,6 @@ npm run seed
 npm run dev
 ```
 
-## Konta seed
-- ADMIN: `b.skladanek@bskmedia.pl` / `C3bee3ae!@#$`
-- EMPLOYEE: `o.tomaszek@bskmedia.pl` / `Olaf123!`
-- EMPLOYEE: `e.kowalska@bskmedia.pl` / `Ewa123!!`
-
 ## Najważniejsze moduły
 - ADMIN: klienci, projekty, pracownicy, przypisania, timesheet (approve/reject), premie, cele KPI, raporty + eksport CSV, audit log, przypomnienia, czat
 - EMPLOYEE: moje projekty, wpisy czasu, premie, podsumowanie, czat
